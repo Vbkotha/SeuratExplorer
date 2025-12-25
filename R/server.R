@@ -418,21 +418,6 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
              strong("Tips: You can paste multiple genes from a column in excel."),style = "font-size:12px;")
   })
 
-  # define Cluster order
-  output$VlnClusterOrder.UI <- renderUI({
-    if(verbose){message("SeuratExplorer: preparing VlnClusterOrder.UI...")}
-    shinyjqui::orderInput(inputId = 'VlnClusterOrder',
-                          label = 'Drag to order:',
-                          items = levels(data$obj@meta.data[,input$VlnClusterResolution]),
-                          width = '100%')
-  })
-
-  # when change cluster resolution, open the shinyBS::bsCollapsePanel, otherwise will cause cluster order not update
-  observeEvent(input$VlnClusterResolution, ({
-    if(verbose){message("SeuratExplorer: updateCollapse for collapseVlnplot...")}
-    shinyBS::updateCollapse(session, "collapseVlnplot", open = "0")
-  }))
-
   # define the idents used
   output$VlnIdentsSelected.UI <- renderUI({
     req(input$VlnClusterResolution)
@@ -445,6 +430,24 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                                                                     selectedTextFormat = "count > 3"),
                               multiple = TRUE)
   })
+
+  # define Cluster order
+  output$VlnClusterOrder.UI <- renderUI({
+    if(verbose){message("SeuratExplorer: preparing VlnClusterOrder.UI...")}
+    shinyjqui::orderInput(inputId = 'VlnClusterOrder',
+                          label = 'Drag to order:',
+                          # items = levels(data$obj@meta.data[,input$VlnClusterResolution]),
+                          items = input$VlnIdentsSelected,
+                          width = '100%')
+  })
+
+  # when change cluster resolution, open the shinyBS::bsCollapsePanel, otherwise will cause cluster order not update
+  observeEvent(input$VlnClusterResolution, ({
+    if(verbose){message("SeuratExplorer: updateCollapse for collapseVlnplot...")}
+    shinyBS::updateCollapse(session, "collapseVlnplot", open = "0")
+  }))
+
+
 
   # define Split Choice UI
   output$VlnSplitBy.UI <- renderUI({
@@ -629,21 +632,6 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
              style = "font-size:12px;")
   })
 
-  # define Cluster order
-  output$DotClusterOrder.UI <- renderUI({
-    if(verbose){message("SeuratExplorer: preparing DotClusterOrder.UI...")}
-    shinyjqui::orderInput(inputId = 'DotClusterOrder',
-                          label = 'Drag to order:',
-                          items = levels(data$obj@meta.data[,input$DotClusterResolution]),
-                          width = '100%')
-  })
-
-  # when change cluster resolution, open the shinyBS::bsCollapsePanel, otherwise will cause cluster order not update
-  observeEvent(input$DotClusterResolution, ({
-    if(verbose){message("SeuratExplorer: updateCollapse for collapseDotplot...")}
-    shinyBS::updateCollapse(session, "collapseDotplot", open = "0")
-  }))
-
   # define the idents used
   output$DotIdentsSelected.UI <- renderUI({
     req(input$DotClusterResolution)
@@ -656,6 +644,22 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                                                                     selectedTextFormat = "count > 3"),
                               multiple = TRUE)
   })
+
+  # define Cluster order
+  output$DotClusterOrder.UI <- renderUI({
+    if(verbose){message("SeuratExplorer: preparing DotClusterOrder.UI...")}
+    shinyjqui::orderInput(inputId = 'DotClusterOrder',
+                          label = 'Drag to order:',
+                          # items = levels(data$obj@meta.data[,input$DotClusterResolution]),
+                          items = input$DotIdentsSelected,
+                          width = '100%')
+  })
+
+  # when change cluster resolution, open the shinyBS::bsCollapsePanel, otherwise will cause cluster order not update
+  observeEvent(input$DotClusterResolution, ({
+    if(verbose){message("SeuratExplorer: updateCollapse for collapseDotplot...")}
+    shinyBS::updateCollapse(session, "collapseDotplot", open = "0")
+  }))
 
   # define Split Choice UI
   output$DotSplitBy.UI <- renderUI({
@@ -870,20 +874,6 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
              style = "font-size:12px;")
   })
 
-  # define Cluster order
-  output$AveragedHeatmapClusterOrder.UI <- renderUI({
-    if(verbose){message("SeuratExplorer: preparing AveragedHeatmapClusterOrder.UI...")}
-    shinyjqui::orderInput(inputId = 'AveragedHeatmapClusterOrder',
-                          label = 'Drag to order:',
-                          items = levels(data$obj@meta.data[,input$AveragedHeatmapClusterResolution]),
-                          width = '100%')
-  })
-
-  observeEvent(input$AveragedHeatmapClusterResolution, ({
-    if(verbose){message("SeuratExplorer: updateCollapse for AveragedcollapseHeatmap...")}
-    shinyBS::updateCollapse(session, "AveragedcollapseHeatmap", open = "0")
-  }))
-
   # define the idents used
   output$AveragedHeatmapIdentsSelected.UI <- renderUI({
     req(input$AveragedHeatmapClusterResolution)
@@ -897,6 +887,23 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                               multiple = TRUE)
   })
 
+  # define Cluster order
+  output$AveragedHeatmapClusterOrder.UI <- renderUI({
+    if(verbose){message("SeuratExplorer: preparing AveragedHeatmapClusterOrder.UI...")}
+    shinyjqui::orderInput(inputId = 'AveragedHeatmapClusterOrder',
+                          label = 'Drag to order:',
+                          # items = levels(data$obj@meta.data[,input$AveragedHeatmapClusterResolution]),
+                          items = input$AveragedHeatmapIdentsSelected,
+                          width = '100%')
+  })
+
+  observeEvent(input$AveragedHeatmapClusterResolution, ({
+    if(verbose){message("SeuratExplorer: updateCollapse for AveragedcollapseHeatmap...")}
+    shinyBS::updateCollapse(session, "AveragedcollapseHeatmap", open = "0")
+  }))
+
+
+
   averagedheatmap_width  <- reactive({ session$clientData$output_averagedheatmap_width })
 
   output$averagedheatmap <- renderPlot({
@@ -906,10 +913,11 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }else{
       cds <- data$obj
       Seurat::DefaultAssay(cds) <- input$AveragedHeatmapAssay
-      cds@meta.data[,input$AveragedHeatmapClusterResolution] <- factor(cds@meta.data[,input$AveragedHeatmapClusterResolution],
-                                                                       levels = input$AveragedHeatmapClusterOrder)
       Seurat::Idents(cds) <- input$AveragedHeatmapClusterResolution
       cds <- subset_Seurat(cds, idents = input$AveragedHeatmapIdentsSelected)
+      # cds@meta.data[,input$AveragedHeatmapClusterResolution] <- factor(cds@meta.data[,input$AveragedHeatmapClusterResolution],
+      #                                                                  levels = input$AveragedHeatmapClusterOrder)
+      Seurat::Idents(cds) <- factor(Seurat::Idents(cds), levels = input$AveragedHeatmapClusterOrder)
       # check gene again, if all the input symbols not exist in the selected assay, specially case: when switch assay!
       if(!any(features_heatmap_averaged$features_current %in% rownames(cds[[input$AveragedHeatmapAssay]]))){
         p <- empty_plot
@@ -983,20 +991,6 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
              strong("Tips: You can paste multiple genes from a column in excel."),style = "font-size:12px;")
   })
 
-  # define Cluster order
-  output$RidgeplotClusterOrder.UI <- renderUI({
-    if(verbose){message("SeuratExplorer: preparing RidgeplotClusterOrder.UI...")}
-    shinyjqui::orderInput(inputId = 'RidgeplotClusterOrder',
-                          label = 'Drag to order:',
-                          items = levels(data$obj@meta.data[,input$RidgeplotClusterResolution]),
-                          width = '100%')
-  })
-
-  observeEvent(input$RidgeplotClusterResolution, ({
-    if(verbose){message("SeuratExplorer: updateCollapse for collapseRidgeplot...")}
-    shinyBS::updateCollapse(session, "collapseRidgeplot", open = "0")
-  }))
-
   # define the idents used
   output$RidgeplotIdentsSelected.UI <- renderUI({
     req(input$RidgeplotClusterResolution)
@@ -1009,6 +1003,23 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                                                                     selectedTextFormat = "count > 3"),
                               multiple = TRUE)
   })
+
+  # define Cluster order
+  output$RidgeplotClusterOrder.UI <- renderUI({
+    if(verbose){message("SeuratExplorer: preparing RidgeplotClusterOrder.UI...")}
+    shinyjqui::orderInput(inputId = 'RidgeplotClusterOrder',
+                          label = 'Drag to order:',
+                          # items = levels(data$obj@meta.data[,input$RidgeplotClusterResolution]),
+                          items = input$RidgeplotIdentsSelected,
+                          width = '100%')
+  })
+
+  observeEvent(input$RidgeplotClusterResolution, ({
+    if(verbose){message("SeuratExplorer: updateCollapse for collapseRidgeplot...")}
+    shinyBS::updateCollapse(session, "collapseRidgeplot", open = "0")
+  }))
+
+
 
   # Conditional panel: show this panel when input multiple genes and stack is set to TRUE
   output$Ridgeplot_stack_show = reactive({
@@ -1048,9 +1059,11 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }else{
       cds <- data$obj
       Seurat::DefaultAssay(cds) <- input$RidgeplotAssay
-      cds@meta.data[,input$RidgeplotClusterResolution] <- factor(cds@meta.data[,input$RidgeplotClusterResolution],
-                                                                 levels = input$RidgeplotClusterOrder)
-      Idents(cds) <- input$RidgeplotClusterResolution
+      Seurat::Idents(cds) <- input$RidgeplotClusterResolution
+      cds <- subset_Seurat(cds, idents = input$RidgeplotIdentsSelected)
+      Seurat::Idents(cds) <- factor(Seurat::Idents(cds), levels = input$RidgeplotClusterOrder)
+      # Seurat::Idents(cds) <- input$RidgeplotClusterResolution
+      # cds@meta.data[,input$RidgeplotClusterResolution] <- Seurat::Idents(cds)
       # check gene again, if all the input symbols not exist in the selected assay, specially case: when switch assay!
       if(!any(features_ridgeplot$features_current %in% c(rownames(cds[[input$RidgeplotAssay]]), data$extra_qc_options))){
         p <- empty_plot
@@ -1061,11 +1074,12 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                                layer = input$RidgeplotSlot,
                                ncol = input$RidgeplotNumberOfColumns,
                                stack = input$RidgeplotStackPlot,
-                               fill.by = input$RidgeplotFillBy,
+                               fill.by = input$RidgeplotFillBy
                                # not use group.by, use Idents(cds) <- input$RidgeplotClusterResolution
                                # because if only one level in existed in the Idents, will throw an error!
-                               #group.by = input$RidgeplotClusterResolution,
-                               idents = input$RidgeplotIdentsSelected) &
+                               # group.by = input$RidgeplotClusterResolution
+                               # idents = input$RidgeplotIdentsSelected
+                               ) &
           ggplot2::theme(axis.text.x = ggplot2::element_text(size = input$RidgeplotXlabelSize),
                          axis.text.y = ggplot2::element_text(size = input$RidgeplotYlabelSize))
       }
@@ -1098,15 +1112,29 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                 selected = data$cluster_default)
   })
 
+  # define the idents used
+  output$CellratioIdentsSelected.UI <- renderUI({
+    req(input$CellratioFillChoice)
+    if(verbose){message("SeuratExplorer: CellratioIdentsSelected.UI...")}
+    shinyWidgets::pickerInput(inputId = "CellratioIdentsSelected", label = "Clusters Used:",
+                              choices = levels(data$obj@meta.data[,input$CellratioFillChoice]),
+                              selected = levels(data$obj@meta.data[,input$CellratioFillChoice]),
+                              options = shinyWidgets::pickerOptions(actionsBox = TRUE,
+                                                                    size = 10,
+                                                                    selectedTextFormat = "count > 3"),
+                              multiple = TRUE)
+  })
+
   # define Fill order
   output$CellratioplotFillOrder.UI <- renderUI({
+    # req(input$CellratioIdentsSelected)
     if(verbose){message("SeuratExplorer: preparing CellratioplotFillOrder.UI...")}
     shinyjqui::orderInput(inputId = 'CellratioFillOrder',
                           label = 'Drag to order:',
-                          items = levels(data$obj@meta.data[,input$CellratioFillChoice]),
+                          # items = levels(data$obj@meta.data[,input$CellratioFillChoice]),
+                          items = input$CellratioIdentsSelected,
                           width = '100%')
   })
-
 
   # define X choices
   output$CellratioXChoice.UI <- renderUI({
@@ -1124,6 +1152,8 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                           items = levels(data$obj@meta.data[,input$CellratioXChoice]),
                           width = '100%')
   })
+
+
 
   # define Facet choices
   output$CellratioFacetChoice.UI <- renderUI({
@@ -1169,10 +1199,12 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     req(input$CellratioXOrder)
     req(input$CellratioFillChoice)
     req(input$CellratioFillOrder)
+    req(input$CellratioIdentsSelected)
     if(verbose){message("SeuratExplorer: preparing cellratioplot...")}
     cds <- data$obj
     if (is.null(FacetChoice.Revised())) { # not facet
       p <- cellRatioPlot(object = cds,
+                         idents = input$CellratioIdentsSelected,
                          sample.name = input$CellratioXChoice,
                          sample.order = input$CellratioXOrder,
                          celltype.name = input$CellratioFillChoice,
@@ -1185,6 +1217,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                          color.choice = input$Cellratiofillcolorplatte)
     }else{
       p <- cellRatioPlot(object = cds,
+                         idents = input$CellratioIdentsSelected,
                          sample.name = input$CellratioXChoice,
                          sample.order = input$CellratioXOrder,
                          celltype.name = input$CellratioFillChoice,

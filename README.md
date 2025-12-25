@@ -593,7 +593,7 @@ filtering, integrating, and visualizing single-cell RNA-seq data.
 
     #> R version 4.4.3 (2025-02-28 ucrt)
     #> Platform: x86_64-w64-mingw32/x64
-    #> Running under: Windows 11 x64 (build 26100)
+    #> Running under: Windows 11 x64 (build 26200)
     #> 
     #> Matrix products: default
     #> 

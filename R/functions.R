@@ -297,6 +297,7 @@ globalVariables(c("num"))
 #' @examples
 #' #NULL
 cellRatioPlot <- function(object = NULL,
+                          idents = NULL,
                           sample.name = NULL,
                           sample.order = NULL,
                           celltype.name = NULL,
@@ -311,17 +312,24 @@ cellRatioPlot <- function(object = NULL,
   # get meta info
   meta <- object@meta.data
 
-  # order
+  # subset
+  meta <- meta[meta[,celltype.name] %in% idents,]
+
+  # fill order | y order
+  if(!is.null(celltype.order)){
+    meta[,celltype.name] <- factor(meta[,celltype.name], levels = celltype.order)
+  }
+
+  # x order
   if(!is.null(sample.order)){
     meta[,sample.name] <- factor(meta[,sample.name], levels = sample.order)
   }
 
-  if(!is.null(celltype.order)){
-    meta[,celltype.name] <- factor(meta[,celltype.name], levels = celltype.order)
-  }
+   # facet order
   if(!is.null(facet.order)){
     meta[,facet.name] <- factor(meta[,facet.name], levels = facet.order)
   }
+
   # calculate percent ratio
   if (is.null(facet.name)) {
     ratio.info <- meta %>%
@@ -336,43 +344,26 @@ cellRatioPlot <- function(object = NULL,
   }
 
   # color
-  fill.col <- getColors(color.platte = color_list, choice = color.choice, n = length(unique(meta[, celltype.name])))
+  # fill.col <- getColors(color.platte = color_list, choice = color.choice, n = length(unique(meta[, celltype.name])))
+  fill.col <- getColors(color.platte = color_list, choice = color.choice, n = length(idents))
 
 
   # plot
-  p <-
-    ggplot2::ggplot(
-      ratio.info,
-      ggplot2::aes_string(x = sample.name, y = "rel_num")
-    ) +
-    ggplot2::geom_col(
-      ggplot2::aes_string(fill = celltype.name),
-      width = col.width
-    ) +
-    ggalluvial::geom_flow(
-      ggplot2::aes_string(
-        stratum = celltype.name,
-        alluvium = celltype.name,
-        fill = celltype.name
-      ),
+  p <- ggplot2::ggplot(ratio.info, ggplot2::aes_string(x = sample.name, y = "rel_num")) +
+    ggplot2::geom_col( ggplot2::aes_string(fill = celltype.name), width = col.width ) +
+    ggalluvial::geom_flow( ggplot2::aes_string( stratum = celltype.name, alluvium = celltype.name, fill = celltype.name ),
       width = col.width,
       alpha = flow.alpha,
-      knot.pos = flow.curve
-    ) +
+      knot.pos = flow.curve) +
     ggplot2::theme_bw() +
     ggplot2::coord_cartesian(expand = 0) +
     ggplot2::scale_y_continuous(labels = scales::label_percent()) +
-    ggplot2::scale_fill_manual(
-      values = fill.col,
-      name = "Cell Type"
-    ) +
-    ggplot2::theme(
-      panel.grid = ggplot2::element_blank(),
-      axis.text = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"),
-      axis.title = ggplot2::element_text(size = ggplot2::rel(1.5), color = "black"),
-      legend.text = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"),
-      legend.title = ggplot2::element_text(size = ggplot2::rel(1.5), color = "black")
-    ) +
+    ggplot2::scale_fill_manual(values = fill.col,name = "Cell Type") +
+    ggplot2::theme(panel.grid = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"),
+                   axis.title = ggplot2::element_text(size = ggplot2::rel(1.5), color = "black"),
+                   legend.text = ggplot2::element_text(size = ggplot2::rel(1.2), color = "black"),
+                   legend.title = ggplot2::element_text(size = ggplot2::rel(1.5), color = "black")) +
     ggplot2::xlab("") +
     ggplot2::ylab("Cell percent ratio")
   if (!is.null(facet.name)) {
