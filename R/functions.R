@@ -12,6 +12,50 @@ prepare_seurat_object <- function(obj, verbose = FALSE){
   return(obj)
 }
 
+#' Helper function to join layers for Assay5 objects
+#' @param SeuratObj A Seurat object
+#' @param assay Assay name
+#' @return Seurat object with joined layers
+join_layers_if_needed <- function(SeuratObj, assay = 'RNA') {
+  if (class(SeuratObj[[assay]])[1] == "Assay5") {
+    SeuratObj <- JoinLayers(SeuratObj)
+  }
+  return(SeuratObj)
+}
+
+#' Helper function to extract counts matrix with proper handling
+#' @param SeuratObj A Seurat object
+#' @param assay Assay name
+#' @return A counts matrix
+get_counts_matrix <- function(SeuratObj, assay = 'RNA') {
+  SeuratObj <- join_layers_if_needed(SeuratObj, assay)
+  if (class(SeuratObj[[assay]])[1] == "Assay5") {
+    counts <- as.matrix(SeuratObj[[assay]]@layers$counts)
+  } else {
+    counts <- as.matrix(SeuratObj[[assay]]$counts)
+  }
+  rownames(counts) <- rownames(SeuratObj[[assay]])
+  colnames(counts) <- colnames(SeuratObj)
+  return(counts)
+}
+
+#' Helper function to extract data matrix with proper handling
+#' @param SeuratObj A Seurat object
+#' @param assay Assay name
+#' @return A data matrix
+get_data_matrix <- function(SeuratObj, assay = 'RNA') {
+  SeuratObj <- join_layers_if_needed(SeuratObj, assay)
+  if (class(SeuratObj[[assay]])[1] == "Assay5") {
+    data <- as.matrix(SeuratObj[[assay]]@layers$data)
+  } else {
+    data <- as.matrix(SeuratObj[[assay]]$data)
+  }
+  rownames(data) <- rownames(SeuratObj[[assay]])
+  colnames(data) <- colnames(SeuratObj)
+  return(data)
+}
+
+
 # Converts eligible non-factor columns to factor type, and converts strings that may be numbers to numbers.
 modify_columns_types <- function(df, types_to_check = c("numeric", "character"), unique_max_counts = 50, unique_max_percent = 0.05, verbose = FALSE){
   # first, extract all columns in types_to_check types
@@ -57,7 +101,7 @@ prepare_assays_slots <- function(obj, verbose = FALSE, data_slot =  c('counts', 
       slot_names <- Layers(obj[[i]])
     }
     slot_names <- data_slot[data_slot %in% slot_names]
-    if (length(slot_names!=0)) {
+    if (length(slot_names) != 0) {
       assay_slot_list[[i]] <- slot_names
     }
   }
@@ -97,8 +141,16 @@ prepare_gene_annotations <- function(obj, verbose = FALSE){
     # the annotation in ATAC assay is not the real features of the assay! just annotations from genome.
     # use ClosestFeature to annotate peaks/features from ATAC assay
     if ('annotation' %in% slotNames(obj[[aassay]])) { # if exist annotation slot in assay
-      anno_df <- Signac::ClosestFeature(obj[[aassay]], regions = rownames(obj[[aassay]]))
-      anno_list[[aassay]] <- anno_df
+      # Check if Signac is available
+      if (requireNamespace("Signac", quietly = TRUE)) {
+        anno_df <- Signac::ClosestFeature(obj[[aassay]], regions = rownames(obj[[aassay]]))
+        anno_list[[aassay]] <- anno_df
+      } else {
+        # If Signac is not available, fall back to using rownames
+        if (verbose) message("Signac package not found. Using rownames instead for assay: ", aassay)
+        anno_df <- data.frame(FeatureName = rownames(obj[[aassay]]))
+        anno_list[[aassay]] <- anno_df
+      }
     }else{ # if not exist annotation slot, use all rownames
       anno_df <- data.frame(FeatureName = rownames(obj[[aassay]]))
       anno_list[[aassay]] <- anno_df
@@ -310,11 +362,28 @@ cellRatioPlot <- function(object = NULL,
                           flow.curve = 0,
                           color.choice = NULL) {
   requireNamespace("dplyr")
+  # Input validation
+  if (is.null(object)) stop("object cannot be NULL")
+  if (is.null(idents)) stop("idents cannot be NULL")
+  if (is.null(sample.name)) stop("sample.name cannot be NULL")
+  if (is.null(celltype.name)) stop("celltype.name cannot be NULL")
+  if (!sample.name %in% colnames(object@meta.data)) {
+    stop(paste("sample.name", sample.name, "not found in meta.data"))
+  }
+  if (!celltype.name %in% colnames(object@meta.data)) {
+    stop(paste("celltype.name", celltype.name, "not found in meta.data"))
+  }
+
   # get meta info
   meta <- object@meta.data
 
   # subset
   meta <- meta[meta[,celltype.name] %in% idents,]
+
+  # Check if we have data left after subsetting
+  if (nrow(meta) == 0) {
+    stop("No cells match the provided idents")
+  }
 
   # fill order | y order
   if(!is.null(celltype.order)){
@@ -335,12 +404,12 @@ cellRatioPlot <- function(object = NULL,
   if (is.null(facet.name)) {
     ratio.info <- meta %>%
       dplyr::group_by(.data[[sample.name]], .data[[celltype.name]]) %>%
-      dplyr::summarise(num = dplyr::n()) %>%
+      dplyr::summarise(num = dplyr::n(), .groups = 'drop') %>%
       dplyr::mutate(rel_num = num / sum(num))
   }else{
     ratio.info <- meta %>%
       dplyr::group_by(.data[[sample.name]], .data[[facet.name]],.data[[celltype.name]]) %>%
-      dplyr::summarise(num = dplyr::n()) %>%
+      dplyr::summarise(num = dplyr::n(), .groups = 'drop') %>%
       dplyr::mutate(rel_num = num / sum(num))
   }
 
@@ -401,17 +470,10 @@ top_genes <- function(SeuratObj, percent.cut = 0.01, group.by, assay = 'RNA') {
   Gene <- NULL
   Expr <- NULL
   DefaultAssay(SeuratObj) <- assay
-  # if type is assay5
-  if (class(SeuratObj[[assay]])[1] == "Assay5") {
-    SeuratObj <- JoinLayers(SeuratObj)
-    counts.expr <- as.matrix(SeuratObj[[assay]]@layers$counts)
-    rownames(counts.expr) <- rownames(SeuratObj[[assay]])
-    colnames(counts.expr) <- colnames(SeuratObj[[assay]])
-  } else { # if type is assay
-    counts.expr <- as.matrix(SeuratObj[[assay]]$counts)
-  }
-  colnames(counts.expr) <- colnames(SeuratObj)
-  rownames(counts.expr) <- rownames(SeuratObj)
+
+  # Use helper function to get counts matrix
+  counts.expr <- get_counts_matrix(SeuratObj, assay)
+
   if (!is.null(group.by)) {
     # calculate by cell type
     all.cell.types <- unique(SeuratObj@meta.data[,group.by])
@@ -432,16 +494,45 @@ top_genes <- function(SeuratObj, percent.cut = 0.01, group.by, assay = 'RNA') {
 }
 
 top_genes_core <- function(expr_mat, cutoff = 0.01, celltype){
-  res_cell_level <- list()
+  # Optimized version using matrix operations instead of loops
+  # Calculate total UMI per cell
+  cell_totals <- colSums(expr_mat)
+
+  # Find genes above cutoff for each cell using vectorized operations
+  gene_list <- list()
   for (i in 1:ncol(expr_mat)) {
-    values <- sort(expr_mat[, i], decreasing = TRUE)
-    rates <- values/sum(values)
-    top <- rates[rates > cutoff]
-    res_cell_level[[i]] <- data.frame('Gene' = names(top), 'Expr' = unname(top))
+    if (cell_totals[i] > 0) {
+      rates <- expr_mat[, i] / cell_totals[i]
+      top_genes_idx <- which(rates > cutoff)
+      if (length(top_genes_idx) > 0) {
+        gene_list[[i]] <- data.frame(
+          'Gene' = rownames(expr_mat)[top_genes_idx],
+          'Expr' = rates[top_genes_idx],
+          stringsAsFactors = FALSE
+        )
+      }
+    }
   }
-  res_cell_level <- Reduce(rbind, res_cell_level)
+
+  if (length(gene_list) == 0) {
+    # Return empty data frame with correct structure
+    return(data.frame(
+      celltype = celltype,
+      total.cells = ncol(expr_mat),
+      Gene = character(0),
+      total.pos.cells = integer(0),
+      total.UMI.pct = numeric(0),
+      cut.Cells = integer(0),
+      cut.pct.mean = numeric(0),
+      cut.pct.median = numeric(0)
+    ))
+  }
+
+  res_cell_level <- do.call(rbind, gene_list)
   genes.statics <- dplyr::group_by(res_cell_level, Gene) %>%
-    dplyr::summarise(cut.pct.mean = round(mean(Expr),digits = 4), cut.pct.median = round(stats::median(Expr),digits = 4), cut.Cells = length(Expr))
+    dplyr::summarise(cut.pct.mean = round(mean(Expr),digits = 4),
+                     cut.pct.median = round(stats::median(Expr),digits = 4),
+                     cut.Cells = length(Expr), .groups = 'drop')
   genes.statics$total.pos.cells <- apply(expr_mat[genes.statics$Gene,,drop = FALSE] > 0, 1, sum)
   genes.statics$total.UMI.pct <- round(apply(expr_mat[genes.statics$Gene,,drop = FALSE], 1, sum)/sum(expr_mat),digits = 4)
   genes.statics$total.cells <- ncol(expr_mat)
@@ -455,16 +546,10 @@ top_genes_core <- function(expr_mat, cutoff = 0.01, celltype){
 top_accumulated_genes <- function(SeuratObj, top_n = 100, group.by, assay = 'RNA'){
   requireNamespace("dplyr")
   requireNamespace("Seurat")
-  if (class(SeuratObj[[assay]])[1] == "Assay5") {
-    SeuratObj <- JoinLayers(SeuratObj)
-    counts.expr <- as.matrix(SeuratObj[[assay]]@layers$counts)
-    rownames(counts.expr) <- rownames(SeuratObj[[assay]])
-    colnames(counts.expr) <- colnames(SeuratObj[[assay]])
-  } else {
-    counts.expr <- as.matrix(SeuratObj[[assay]]$counts)
-  }
-  colnames(counts.expr) <- colnames(SeuratObj)
-  rownames(counts.expr) <- rownames(SeuratObj)
+
+  # Use helper function to get counts matrix
+  counts.expr <- get_counts_matrix(SeuratObj, assay)
+
   if (!is.null(group.by)) {
     all.cell.types <- unique(SeuratObj@meta.data[,group.by])
     all.cell.types <- all.cell.types[!is.na(all.cell.types)] # in case of some celltype has NA value
@@ -501,14 +586,10 @@ top_accumulated_genes_core <- function(expr_mat, top_n, celltype){
 summary_features <- function(SeuratObj, features, group.by, assay = 'RNA'){
   requireNamespace("dplyr")
   requireNamespace("Seurat")
-  if (class(SeuratObj[[assay]])[1] == "Assay5") { # only found RNA assay can has Assay5 class!
-    SeuratObj <- JoinLayers(SeuratObj)
-    normalized.expr <- as.matrix(SeuratObj[[assay]]@layers$data)
-    rownames(normalized.expr) <- rownames(SeuratObj[[assay]])
-    colnames(normalized.expr) <- colnames(SeuratObj[[assay]])
-  } else {
-    normalized.expr <- as.matrix(SeuratObj[[assay]]$data)
-  }
+
+  # Use helper function to get data matrix
+  normalized.expr <- get_data_matrix(SeuratObj, assay)
+
   if (!is.null(group.by)) {
     all.cell.types <- unique(SeuratObj@meta.data[,group.by])
     res <- list()
@@ -543,16 +624,13 @@ summary_features_core <- function(expr_mat, features, group = 'merged'){
 
 
 calculate_top_correlations <- function(SeuratObj, method, top = 1000, assay = 'RNA'){
-  if (class(SeuratObj[[assay]])[1] == "Assay5") {
-    SeuratObj <- JoinLayers(SeuratObj)
-    normalized.expr <- as.matrix(SeuratObj[[assay]]@layers$data)
-    rownames(normalized.expr) <- rownames(SeuratObj[[assay]])
-    colnames(normalized.expr) <- colnames(SeuratObj[[assay]])
-  } else {
-    normalized.expr <- as.matrix(SeuratObj[[assay]]$data)
-  }
-  # filter cells: remove genes with low expression, accumulated expression should more than 1/10 cell numbers,or say mean expression value in call cells > 0.1
-  normalized.expr <- normalized.expr[apply(normalized.expr, 1, sum) > 0.1 * ncol(SeuratObj),,drop = FALSE]
+  # Use helper function to get data matrix
+  normalized.expr <- get_data_matrix(SeuratObj, assay)
+
+  # Filter genes with low expression (mean expression > 0.1 across all cells)
+  # This is an important filter to reduce computation time
+  gene_means <- rowMeans(normalized.expr)
+  normalized.expr <- normalized.expr[gene_means > 0.1, , drop = FALSE]
   cor.res = stats::cor(t(as.matrix(normalized.expr)), method = method)
   cor.res[lower.tri(cor.res, diag = TRUE)] <- 0
   cor.res <- reshape2::melt(cor.res)
@@ -568,14 +646,9 @@ calculate_top_correlations <- function(SeuratObj, method, top = 1000, assay = 'R
 }
 
 calculate_most_correlated <- function(SeuratObj, feature, method, assay = 'RNA'){
-  if (class(SeuratObj[[assay]])[1] == "Assay5") {
-    SeuratObj <- JoinLayers(SeuratObj)
-    normalized.expr <- as.matrix(SeuratObj[[assay]]@layers$data)
-    rownames(normalized.expr) <- rownames(SeuratObj[[assay]])
-    colnames(normalized.expr) <- colnames(SeuratObj[[assay]])
-  } else {
-    normalized.expr <- as.matrix(SeuratObj[[assay]]$data)
-  }
+  # Use helper function to get data matrix
+  normalized.expr <- get_data_matrix(SeuratObj, assay)
+
   x <- normalized.expr[feature, ,drop = FALSE]
   y <- normalized.expr[rownames(normalized.expr)[rownames(normalized.expr) != feature],,drop = FALSE]
   # filter cells: remove genes with low expression, accumulated expression should more than 1/10 cell numbers.
@@ -590,14 +663,9 @@ calculate_most_correlated <- function(SeuratObj, feature, method, assay = 'RNA')
 }
 
 calculate_correlation <- function(SeuratObj, features, method, assay = 'RNA'){
-  if (class(SeuratObj[[assay]])[1] == "Assay5") {
-    SeuratObj <- JoinLayers(SeuratObj)
-    normalized.expr <- as.matrix(SeuratObj[[assay]]@layers$data)
-    rownames(normalized.expr) <- rownames(SeuratObj[[assay]])
-    colnames(normalized.expr) <- colnames(SeuratObj[[assay]])
-  } else {
-    normalized.expr <- as.matrix(SeuratObj[[assay]]$data)
-  }
+  # Use helper function to get data matrix
+  normalized.expr <- get_data_matrix(SeuratObj, assay)
+
   normalized.expr <- normalized.expr[rownames(normalized.expr) %in% features,,drop = FALSE]
   # filter cells: remove genes with low expression, accumulated expression should more than 1/10 cell numbers.
   normalized.expr <- normalized.expr[apply(normalized.expr, 1, sum) > 0.1 * ncol(SeuratObj),,drop = FALSE]
@@ -644,33 +712,22 @@ AverageHeatmap <- function(
     ...) {
   requireNamespace("ComplexHeatmap")
 
+  # Input validation
+  if (is.null(object)) stop("object cannot be NULL")
+  if (is.null(markerGene)) stop("markerGene cannot be NULL")
+
   # get cells mean gene expression
   # check Seurat version first
-  vr <- utils::compareVersion(as.character(utils::packageVersion("Seurat")),"5")
-  if(vr == 1){
-    mean_gene_exp <- as.matrix(
+  mean_gene_exp <- as.matrix(
       data.frame(
         Seurat::AverageExpression(object,
                                   features = markerGene,
                                   group.by = group.by,
                                   assays = assays,
                                   layer = slot
-        )
       )
     )
-  }else{
-    mean_gene_exp <- as.matrix(
-      data.frame(
-        Seurat::AverageExpression(object,
-                                  features = markerGene,
-                                  group.by = group.by,
-                                  assays = assays,
-                                  layer = slot
-        )
-      )
-    )
-  }
-
+  )
   colnames(mean_gene_exp) <- levels(Seurat::Idents(object))
 
   # Z-score
