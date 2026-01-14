@@ -6,6 +6,7 @@
 \usage{
 cellRatioPlot(
   object = NULL,
+  idents = NULL,
   sample.name = NULL,
   sample.order = NULL,
   celltype.name = NULL,
@@ -20,6 +21,8 @@ cellRatioPlot(
 }
 \arguments{
 \item{object}{an Seurat object}
+
+\item{idents}{idents used, default all idents}
 
 \item{sample.name}{x axis}
 

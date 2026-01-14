@@ -279,6 +279,7 @@ globalVariables(c("num"))
 #' support facet, codes refer to: https://github.com/junjunlab/scRNAtoolVis/blob/master/R/cellRatioPlot.R, with modification
 #'
 #' @param object an Seurat object
+#' @param idents idents used, default all idents
 #' @param sample.name x axis
 #' @param sample.order order for x axis
 #' @param celltype.name column fill by
@@ -386,8 +387,9 @@ cellRatioPlot <- function(object = NULL,
 #'
 #'
 #' @param SeuratObj Seurat object
-#' @param expr.cut UMI percentage cutoff, in a cell, if a gene with UMIs ratio more than this cutoff, this gene will be assigned to highly expressed gene for this cell
+#' @param percent.cut UMI percentage cutoff, in a cell, if a gene with UMIs ratio more than this cutoff, this gene will be assigned to highly expressed gene for this cell
 #' @param group.by how to group cells
+#' @param assay which assay used
 #' @import dplyr Seurat SeuratObject
 #'
 #' @return a data frame
@@ -435,7 +437,7 @@ top_genes_core <- function(expr_mat, cutoff = 0.01, celltype){
     values <- sort(expr_mat[, i], decreasing = TRUE)
     rates <- values/sum(values)
     top <- rates[rates > cutoff]
-    res_cell_level[[i]] <- data.frame(Gene = names(top), Expr = unname(top))
+    res_cell_level[[i]] <- data.frame('Gene' = names(top), 'Expr' = unname(top))
   }
   res_cell_level <- Reduce(rbind, res_cell_level)
   genes.statics <- dplyr::group_by(res_cell_level, Gene) %>%

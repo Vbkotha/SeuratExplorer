@@ -136,10 +136,6 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   ## batch addin
   do.call(tagList, c(output_dimension_reduction, output_resolution, output_assay))
 
-  # to be deleted
-  # # Force updates even when hidden
-  # outputOptions(output, "DimClusterResolution.UI", suspendWhenHidden = FALSE)
-
   ############################# Dimension Reduction Plot
   # define Cluster order
   output$DimClusterOrder.UI <- renderUI({
@@ -1258,6 +1254,19 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
       }
     })
 
+  output$cellratiodata <- renderTable({
+    req(input$CellratioFillChoice)
+    meta <- data$obj@meta.data
+    # subset
+    meta <- meta[meta[,input$CellratioFillChoice] %in% input$CellratioIdentsSelected,]
+    meta[,input$CellratioFillChoice] <- as.character(meta[,input$CellratioFillChoice])
+    if (is.null(FacetChoice.Revised())) {
+      table(meta[,input$CellratioFillChoice], meta[,input$CellratioXChoice])
+    }else{
+      table(meta[,input$CellratioFacetChoice], meta[, input$CellratioFillChoice], meta[, input$CellratioXChoice])
+    }
+  })
+
   ################################ DEGs analysis
   # Warning
   output$degs_info = renderText({
@@ -2139,7 +2148,7 @@ server <- function(input, output, session) {
                                                         keywords = getOption("SeuratExplorerReductionKeyWords"),
                                                         verbose = getOption('SeuratExplorerVerbose'))
 
-    data$assays_slots_options <- prepare_assays_slots(ob = data$obj,
+    data$assays_slots_options <- prepare_assays_slots(obj = data$obj,
                                                       data_slot = data$assay_slots,
                                                       verbose = getOption('SeuratExplorerVerbose'))
 

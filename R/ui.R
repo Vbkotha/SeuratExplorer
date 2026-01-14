@@ -279,6 +279,7 @@ explorer_body_ui <- function(tab_list){
                                       box(title = "Cell Percentage Plot",
                                           withSpinner(plotOutput("cellratioplot",height = "auto")), # Add a spinner that shows when an output is recalculating
                                           div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadcellratioplot",style = "bordered",color = "primary")),
+                                          div(style = "margin-top: 40px;", tableOutput("cellratiodata"),align="center"),
                                           width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                       box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                           # Fill in part
