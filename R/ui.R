@@ -33,6 +33,7 @@ explorer_sidebar_ui <- function(){
                          menuSubItem(text = "Top Expressed Features", tabName = "topgenes", icon = shiny::icon("angle-double-right")),
                          menuSubItem(text = "Feature Summary", tabName = "featuresummary", icon = shiny::icon("angle-double-right")),
                          menuSubItem(text = "Feature Correlation", tabName = "featurecorrelation", icon = shiny::icon("angle-double-right")),
+                         menuSubItem(text = "Rename Clusters", tabName = "renameclusters", icon = shiny::icon("angle-double-right")),
                          menuSubItem(text = "Search Features", tabName = "featuresdf", icon = shiny::icon("angle-double-right")),
                          menuSubItem(text = "Cells Metadata", tabName = "cellmetadata", icon = shiny::icon("angle-double-right")),
                          menuSubItem(text = "Object Structure", tabName = "objectstructure", icon = shiny::icon("angle-double-right")),
@@ -441,6 +442,31 @@ explorer_body_ui <- function(tab_list){
                                            )
                                          )
   )
+  tab_list[["renameclusters"]] = tabItem(tabName = "renameclusters",
+                                             fluidRow(
+                                               box(title = "Rename Clusters", solidHeader = TRUE, status = "primary", width = 9,
+                                                   withSpinner(DT::dataTableOutput('cell_annotation')),
+                                                   # verbatimTextOutput("updated_df_output"), # for debug use
+                                                   conditionalPanel(
+                                                     condition = "output.renameclusterscheck_OK",
+                                                     plotOutput("renameclusterdimplot"),
+                                                   )
+                                                   ),
+                                               box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
+                                                   withSpinner(uiOutput("renameclustersClusterResolution.UI"), proxy.height = "10px"),
+                                                   withSpinner(uiOutput("renameclustersDimensionReduction.UI"), proxy.height = "10px"),
+                                                   textInput('renameclustersNewClusterName', 'Input Cluster name:', value = "group"),
+                                                   withSpinner(uiOutput("renameclustersNewClusterNamehints.UI"), proxy.height = "10px"),
+                                                   actionButton("renameclustersCheck", "Check", icon = shiny::icon("check"), class = "btn-primary"),
+                                                   conditionalPanel(
+                                                     condition = "output.renameclusterscheck_OK",
+                                                     div(style = "margin-top: 10px;",
+                                                         actionButton("renameclustersSubmit", "Update", icon = shiny::icon("arrows-rotate"), class = "btn-primary"),
+                                                         downloadButton("renameclustersDownload", "Download", icon = shiny::icon("file-arrow-down"), class = "btn-primary")
+                                                         ),
+                                                   ))
+                                             )
+  )
   tab_list[["featuresdf"]] = tabItem(tabName = "featuresdf",
                                              fluidRow(
                                                box(title = "Search Features", solidHeader = TRUE, status = "primary", width = 12,
@@ -489,13 +515,14 @@ ui <-  function(){
   }
 
   # Header ----
-  header = shinydashboard::dashboardHeader(title = p(strong(em("Seurat Explorer"))),
+  header <- shinydashboard::dashboardHeader(title = p(strong(em("Seurat Explorer"))),
                            shinydashboard::dropdownMenu(type = "notifications", icon = shiny::icon("github"), headerText = "R packages on Github:",
-                                        notificationItemWithAttr(icon = shiny::icon("github"), status = "info", text = "SeuratExplorer", href = "https://github.com/fentouxungui/SeuratExplorer", target = "_blank"),
-                                        notificationItemWithAttr(icon = shiny::icon("github"), status = "info", text = "SeuratExplorerServer", href = "https://github.com/fentouxungui/SeuratExplorerServer", target = "_blank")))
+                                        notificationItemWithAttr(icon = shiny::icon("github"), status = "info", text = "Seurat Explorer", href = "https://github.com/fentouxungui/SeuratExplorer", target = "_blank"),
+                                        notificationItemWithAttr(icon = shiny::icon("github"), status = "info", text = "Seurat Explorer Server", href = "https://github.com/fentouxungui/SeuratExplorerServer", target = "_blank")))
 
   # Sidebar ----
-  sidebar = shinydashboard::dashboardSidebar(
+  sidebar <- shinydashboard::dashboardSidebar(
+    # tags$head(tags$style(HTML('* {font-family: "Times New Roman"};'))),
     shinydashboard::sidebarMenu(
       shinydashboard::menuItem("Dataset", tabName = "dataset", icon = shiny::icon("database")),
       explorer_sidebar_ui()
@@ -503,9 +530,9 @@ ui <-  function(){
   )
 
   # BODY ----
-  tab_list = list()
+  tab_list <- list()
 
-  tab_list[["dataset"]] = shinydashboard::tabItem(tabName = "dataset",
+  tab_list[["dataset"]] <- shinydashboard::tabItem(tabName = "dataset",
                                   fluidRow(
                                     # upload a file
                                     box(status = "primary", title = "Upload Data", width = 12, collapsible = TRUE, solidHeader = TRUE,
@@ -515,7 +542,8 @@ ui <-  function(){
 
   tab_list <- explorer_body_ui(tab_list = tab_list)
 
-  body = shinydashboard::dashboardBody(
+  body <- shinydashboard::dashboardBody(
+    # tags$head(tags$style(HTML('* {font-family: "Times New Roman"};'))),
     div(class= "tab-content", tab_list),
     tags$script(HTML(
       "document.querySelector('body > div.wrapper > header > nav > div > ul > li > a > span').style.visibility = 'hidden';"
@@ -523,7 +551,8 @@ ui <-  function(){
   )
 
   # combine
-  ui_out = shinydashboard::dashboardPage(title = "Seurat Explorer", header, sidebar, body)
+  ui_out <- shinydashboard::dashboardPage(header, sidebar, body,
+                                         title = "Seurat Explorer")
   return(ui_out)
 }
 

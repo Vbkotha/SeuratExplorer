@@ -798,7 +798,7 @@ AverageHeatmap <- function(
 }
 
 readSeurat <- function(path, verbose = FALSE){
-  if(verbose){message("Reading in data...")}
+  if(verbose){message("SeuratExplorer: Reading in data...")}
   # read data
   if (tools::file_ext(path) == 'qs2') {
     seu_obj <- qs2::qs_read(path)
@@ -807,11 +807,13 @@ readSeurat <- function(path, verbose = FALSE){
   )
   # update Seurat object
   if (class(seu_obj)[[1]] == 'seurat') { # for very old version: seurat object
-    seu_obj <- SeuratObject::UpdateSeuratObject(seu_obj)
+    if(verbose){message('SeuratExplorer: prepare_seurat_object Update Seurat Object for very old versions!')}
+    seu_obj <- suppressMessages(SeuratObject::UpdateSeuratObject(seu_obj))
   }else if(SeuratObject::Version(seu_obj) < utils::packageVersion('SeuratObject')) {
-    seu_obj <- SeuratObject::UpdateSeuratObject(seu_obj)
+    if(verbose){message('SeuratExplorer: Update Seurat Object for old versions!')}
+    seu_obj <- suppressMessages(SeuratObject::UpdateSeuratObject(seu_obj))
   }else{
-    if(verbose){message('Update Seurat Object escaped for it has been the latest version!')}
+    if(verbose){message('SeuratExplorer: Update Seurat Object escaped for it has been the latest version!')}
   }
   return(seu_obj)
 }
@@ -844,6 +846,13 @@ empty_plot <- ggplot2::ggplot() +
   ggplot2::theme(axis.title = ggplot2::element_blank(),
                  axis.text = ggplot2::element_blank(),
                  axis.ticks = ggplot2::element_blank())
+
+
+
+check_allowed_chars <- function(text_string) {
+  # Returns TRUE if NO forbidden characters are found (meaning only allowed chars are present)
+  !grepl("[^a-zA-Z0-9_-]", text_string)
+}
 
 
 

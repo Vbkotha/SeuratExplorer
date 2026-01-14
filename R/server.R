@@ -33,11 +33,11 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
 
   # batch define some output elements
   ## dimension reduction options for dimplot and featureplot
-  dimension_reduction_UI_names <- c('DimDimensionReduction', 'FeatureDimensionReduction')
-  dimension_reduction_df <- data.frame(Element =  paste0(dimension_reduction_UI_names, '.UI'),
-                                       UIID = dimension_reduction_UI_names)
+  dimension_reduction_UI_names <- c('DimDimensionReduction', 'FeatureDimensionReduction', 'renameclustersDimensionReduction')
+  dimension_reduction_df <- data.frame(Element =  paste0(dimension_reduction_UI_names, '.UI'), UIID = dimension_reduction_UI_names)
   output_dimension_reduction <- lapply(1:nrow(dimension_reduction_df), function(i){
     output[[dimension_reduction_df$Element[i]]] <- renderUI({
+      req(data$obj)
       if(verbose){message(paste0("SeuratExplorer: preparing ", dimension_reduction_df$Element[i], "..."))}
       selectInput(dimension_reduction_df$UIID[i],
                   'Dimension Reduction:',
@@ -57,11 +57,13 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                            'ClusterMarkersClusterResolution',
                            'TopGenesClusterResolution',
                            'FeatureSummaryClusterResolution',
-                           'FeatureCorrelationClusterResolution')
+                           'FeatureCorrelationClusterResolution',
+                           'renameclustersClusterResolution')
   resolution_df <- data.frame(Element = paste0(resolution_UI_names, '.UI'),
                               UIID = resolution_UI_names)
   output_resolution <- lapply(1:nrow(resolution_df), function(i){
     output[[resolution_df$Element[i]]] <- renderUI({
+      req(data$obj)
       if(verbose){message(paste0("SeuratExplorer: preparing ", resolution_df$Element[i], "..."))}
       selectInput(resolution_df$UIID[i], 'Cluster Resolution:',
                   choices = data$cluster_options,
@@ -84,7 +86,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   #   })
   # })
 
-  # allowed slots for each assay in each plot/summary functions
+  # allowed data slots for each assay in each plot/summary functions
   assay_allowed_slots <- list('FeatureAssay' = isolate(data$assay_slots),
                               # use isolate for in case of error:
                               # Can't access reactive value 'assay_slots' outside of reactive consumer.
@@ -134,6 +136,9 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   ## batch addin
   do.call(tagList, c(output_dimension_reduction, output_resolution, output_assay))
 
+  # to be deleted
+  # # Force updates even when hidden
+  # outputOptions(output, "DimClusterResolution.UI", suspendWhenHidden = FALSE)
 
   ############################# Dimension Reduction Plot
   # define Cluster order
@@ -184,6 +189,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                                                                     selectedTextFormat = "count > 3"),
                               multiple = TRUE)
   })
+
 
   dimplot_width  <- reactive({ session$clientData$output_dimplot_width })
 
@@ -1127,7 +1133,6 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
 
   # define Fill order
   output$CellratioplotFillOrder.UI <- renderUI({
-    # req(input$CellratioIdentsSelected)
     if(verbose){message("SeuratExplorer: preparing CellratioplotFillOrder.UI...")}
     shinyjqui::orderInput(inputId = 'CellratioFillOrder',
                           label = 'Drag to order:',
@@ -1444,7 +1449,6 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
 
   outputOptions(output, 'DEGs_row_selected', suspendWhenHidden=FALSE)
 
-  #db <- get("GenesDB") # works
   db <- SeuratExplorer::GenesDB
 
   output$ExternalLinks.UI <- renderUI({
@@ -1878,6 +1882,157 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                                                 list(extend = 'excel', title = "feature-correlation"))))
   })
 
+  ############################## Rename Clusters
+  cell_annotation_df <- reactiveVal(data.frame())
+
+  observe({
+    req(input$renameclustersClusterResolution)
+    cell_annotation_df(data.frame(Old_Name = levels(data$obj@meta.data[,input$renameclustersClusterResolution]),
+                                  New_Name = rep('-', length(levels(data$obj@meta.data[,input$renameclustersClusterResolution])))))
+  })
+
+  output$cell_annotation <- DT::renderDataTable({
+    req(input$renameclustersClusterResolution)
+    DT::datatable(cell_annotation_df(),
+                  editable = list(target = 'cell', disable = list(columns = 0)), # Disables columns 1
+                  selection = "single",
+                  options = list(dom = 'lrtip', lengthChange = FALSE, pageLength = -1,
+                                 language = list(info = "Double click '-' to start edit, only support letters, numbers, - and _.")),
+                  rownames = FALSE
+                  )
+  })
+
+  observeEvent(input$cell_annotation_cell_edit, {
+    info <- input$cell_annotation_cell_edit
+    new_df <- cell_annotation_df()
+    new_df[info$row, info$col + 1] <- info$value
+    cell_annotation_df(new_df)
+  })
+
+
+  output$renameclusterscheck_OK <- reactive(FALSE)
+
+  outputOptions(output, 'renameclusterscheck_OK', suspendWhenHidden = FALSE)
+
+  new_anno_mapping <- reactiveValues(NewClusterName = '',
+                                     OldClusterName = '',
+                                     mapping = data.frame())
+
+  observeEvent(input$renameclustersCheck, {
+    # check input format
+    if ('-' %in% cell_annotation_df()$New_Name) {
+      showModal(modalDialog(title = "Error",
+                            "'-' found, please edit all levels!",
+                            footer= modalButton("Dismiss"),
+                            easyClose = TRUE,
+                            size = "l"))
+      output$renameclusterscheck_OK <- reactive(FALSE)
+    }else if('' %in% trimws(cell_annotation_df()$New_Name)){
+      showModal(modalDialog(title = "Error",
+                            "New cluster can not be empty!",
+                            footer= modalButton("Dismiss"),
+                            easyClose = TRUE,
+                            size = "l"))
+      output$renameclusterscheck_OK <- reactive(FALSE)
+    }else if (!all(sapply(cell_annotation_df()$New_Name, check_allowed_chars))) {
+      showModal(modalDialog(title = "Error",
+                            "Unsupported character found! only support letters, numbers, - and _.",
+                            footer= modalButton("Dismiss"),
+                            easyClose = TRUE,
+                            size = "l"))
+      output$renameclusterscheck_OK <- reactive(FALSE)
+    } else  if (!check_allowed_chars(input$renameclustersNewClusterName)) {
+      showModal(modalDialog(title = "Error",
+                            "Unsupported character found! only support letters, numbers, - and _.",
+                            footer= modalButton("Dismiss"),
+                            easyClose = TRUE,
+                            size = "l"))
+      output$renameclusterscheck_OK <- reactive(FALSE)
+    }else{
+      # check cluster name duplicates
+      if (input$renameclustersNewClusterName %in% colnames(data$obj@meta.data)) {
+          showModal(modalDialog(title = "Error",
+                                "Duplicated cluster name found, please change the cluster name!",
+                                footer= modalButton("Dismiss"),
+                                easyClose = TRUE,
+                                size = "l"))
+      }else{
+        # show dimension plot
+        cds <- data$obj
+        Seurat::Idents(cds) <- input$renameclustersClusterResolution
+        new_names_mapping <- cell_annotation_df()$New_Name
+        names(new_names_mapping) <- cell_annotation_df()$Old_Name
+        cds <- Seurat::RenameIdents(cds, new_names_mapping)
+        output$renameclusterdimplot <- renderPlot(Seurat::DimPlot(cds,
+                                                                  reduction = input$renameclustersDimensionReduction,
+                                                                  label = TRUE))
+        new_anno_mapping$NewClusterName <- input$renameclustersNewClusterName
+        new_anno_mapping$OldClusterName = input$renameclustersClusterResolution
+        new_anno_mapping$mapping = cell_annotation_df()
+        # output$updated_df_output <- renderPrint({ # for debug
+        #   str(reactiveValuesToList(new_anno_mapping))
+        # })
+        output$renameclusterscheck_OK <- reactive(TRUE)
+      }
+    }
+  })
+
+  output$renameclustersNewClusterNamehints.UI <- renderUI({
+    if(verbose){message("SeuratExplorer: preparing renameclustersNewClusterNamehints.UI...")}
+    helpText(strong(paste("Avoid using: ",
+                          paste(colnames(data$obj@meta.data), collapse = " "), ". Only support letters, numbers, - and _.",
+                          sep = "")),style = "font-size:12px;")
+  })
+
+  observeEvent(input$renameclustersSubmit, {
+    new_anno_mapping_list <- reactiveValuesToList(new_anno_mapping)
+    need_update_data <- FALSE
+
+    if (new_anno_mapping_list$NewClusterName == ''){
+      showModal(modalDialog(title = "Error:",
+                            "Please run Check before a submit!",
+                            footer= modalButton("Dismiss"),
+                            easyClose = TRUE,
+                            size = "l"))
+    }else if(new_anno_mapping_list$NewClusterName %in% colnames(data$obj@meta.data)){
+      showModal(modalDialog(title = "Error",
+                            "Duplicated labels found, do not resubmit!",
+                            footer= modalButton("Dismiss"),
+                            easyClose = TRUE,
+                            size = "l"))
+    }else{
+      cds <- data$obj
+      Seurat::Idents(cds) <- new_anno_mapping_list$OldClusterName
+      new_names_mapping <- new_anno_mapping_list$mapping$New_Name
+      names(new_names_mapping) <- new_anno_mapping_list$mapping$Old_Name
+      cds <- Seurat::RenameIdents(cds, new_names_mapping)
+      cds@meta.data[, new_anno_mapping_list$NewClusterName] <- Idents(cds)
+      data$obj <- cds
+      data$cluster_options <- prepare_cluster_options(df = data$obj@meta.data,
+                                                      verbose = getOption('SeuratExplorerVerbose'))
+      data$split_options <- prepare_split_options(df = data$obj@meta.data,
+                                                  max.level = data$split_maxlevel,
+                                                  verbose = getOption('SeuratExplorerVerbose'))
+      showModal(modalDialog(title = "Congratulations:",
+                            "New annotation added!",
+                            footer= modalButton("Dismiss"),
+                            easyClose = TRUE,
+                            size = "l"))
+    }
+  })
+
+  output$renameclustersDownload <- downloadHandler(
+    filename = function() {
+      "new_annotation_mapping.csv"
+    },
+    content = function(file) {
+      new_anno_mapping_list <- reactiveValuesToList(new_anno_mapping)
+      df <- new_anno_mapping_list$mapping
+      colnames(df) <- c(new_anno_mapping_list$OldClusterName, new_anno_mapping_list$NewClusterName)
+      write.csv(df, file, row.names = FALSE)
+    }
+  )
+
   ############################## Search features
   # output the features dataset
   output$dataset_features <- DT::renderDT(server=TRUE,{
@@ -1970,13 +2125,14 @@ server <- function(input, output, session) {
   # cluster_options/split_options/extra_qc_options all are column name from seurat object meta.data,
   # which will be used for later plot
   # load data after data selection
-  observe({
-    req(input$dataset_file) # req: Check for required values; 'dataset_file' is a data.frame
+  observeEvent(input$dataset_file, {
     ext = tools::file_ext(input$dataset_file$datapath) # file_ext: returns the file (name) extensions
     # validate + need: check file name post-fix, in not rds or qs2, will throw an error
     validate(need(expr = ext %in% c("rds","qs2","Rds"),
                   message = "Please upload a .rds or a .qs2 file"))
-    data$obj <- prepare_seurat_object(obj = readSeurat(path = input$dataset_file$datapath),
+    data$Path <- input$dataset_file$datapath
+
+    data$obj <- prepare_seurat_object(obj = readSeurat(path = input$dataset_file$datapath, verbose = getOption('SeuratExplorerVerbose')),
                                       verbose = getOption('SeuratExplorerVerbose'))
 
     data$reduction_options <- prepare_reduction_options(obj = data$obj,
