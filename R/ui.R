@@ -172,9 +172,9 @@ explorer_body_ui <- function(tab_list){
                                                                                      style = "info", value = "0")),
                                         withSpinner(uiOutput("DotSplitBy.UI"), proxy.height = "10px"),
                                         withSpinner(uiOutput("DotAssays.UI"), proxy.height = "10px"),
-                                        checkboxInput("DotClusterIdents",label = "Cluster Idents", FALSE),
-                                        checkboxInput("DotRotateAxis",label = "Rotate Axis", FALSE),
-                                        checkboxInput("DotFlipCoordinate",label = "Flip Coordinate", FALSE),
+                                        checkboxInput("DotClusterIdents",label = "Cluster the Clusters", FALSE),
+                                        checkboxInput("DotRotateAxis",label = "Rotate x Axis Lables", FALSE),
+                                        checkboxInput("DotFlipCoordinate",label = "Flip XY Coordinate", FALSE),
                                         conditionalPanel(
                                           condition = "output.DotPlot_Split_isNone",
                                           colourpicker::colourInput("DotPlotLowestExprColor", "Pick Color for lowest expression:", "#E5E5E5", palette = "limited"),
@@ -197,6 +197,7 @@ explorer_body_ui <- function(tab_list){
                                         textAreaInput("HeatmapGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
                                         withSpinner(uiOutput("Heatmaphints.UI"), proxy.height = "10px"),
                                         withSpinner(uiOutput("HeatmapClusterResolution.UI"), proxy.height = "10px"),
+                                        withSpinner(uiOutput("HeatmapIdentsSelected.UI"), proxy.height = "10px"),
                                         bsCollapse(id = "collapseHeatmap", open = "0",
                                                             bsCollapsePanel(title = "Change Cluster Order",
                                                                                      withSpinner(uiOutput("HeatmapClusterOrder.UI"), proxy.height = "10px"),
@@ -279,7 +280,10 @@ explorer_body_ui <- function(tab_list){
                                       box(title = "Cell Percentage Plot",
                                           withSpinner(plotOutput("cellratioplot",height = "auto")), # Add a spinner that shows when an output is recalculating
                                           div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadcellratioplot",style = "bordered",color = "primary")),
-                                          div(style = "margin-top: 40px;", tableOutput("cellratiodata"),align="center"),
+                                          div(style = "margin-top: 50px;",
+                                              hr(),
+                                              DT::dataTableOutput('cellratiodata'),
+                                              align="center"),
                                           width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                       box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                           # Fill in part

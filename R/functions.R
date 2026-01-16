@@ -722,6 +722,10 @@ AverageHeatmap <- function(
 
   # get cells mean gene expression
   # check Seurat version first
+  print(object)
+  print(group.by)
+  print(assays)
+  print(slot)
   mean_gene_exp <- as.matrix(
       data.frame(
         Seurat::AverageExpression(object,
@@ -903,7 +907,7 @@ check_genes_error <- "None of the input genes can be found!"
 
 # for plot features related functions when none of the input features can be recognized
 empty_plot <- ggplot2::ggplot() +
-  ggplot2::annotate('text', x = 0, y = 0, label = 'Please input correct features!\n Unrecognized features will be removed automatically.\n You can check the features in "Search Features" page.', color = 'darkgrey', size = 6)  +
+  ggplot2::annotate('text', x = 0, y = 0, label = 'Please input correct features!\n Unrecognized features will be removed automatically.\n You can check the features in "Search Features" page.\n Or at leaset select one cluster.', color = 'darkgrey', size = 6)  +
   ggplot2::theme_bw() +
   ggplot2::geom_blank() +
   ggplot2::theme(axis.title = ggplot2::element_blank(),
