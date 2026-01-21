@@ -3,7 +3,7 @@ output: github_document
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-<!-- 如果要生成github主页上的README.md, 需要将此文件复制到R包的主目录下,然后设置for_github参数为TRUE,然后knit,运行完成后删除主目录下的README.Rmd文件 -->
+<!-- To generate README.md for GitHub homepage: copy this file to the package root directory, set for_github parameter to TRUE, then knit. Delete the README.Rmd file from the root directory after completion -->
 
 
 ```{r, include = FALSE}
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r echo=FALSE, results="hide", message=FALSE}
-for_github <- FALSE # 是否用于生成github主页上的Readme.md,如果是,则使用图片的相对路径,否则使用绝对路径！
+for_github <- FALSE # Set to TRUE when generating README.md for GitHub (uses relative image paths); otherwise FALSE (uses absolute paths)
 ```
 
 # SeuratExplorer
@@ -43,15 +43,15 @@ library(badger)
 [![AskZreadAI](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/fentouxungui/SeuratExplorer)
 <!-- badges: end -->
 
-> An ``Shiny`` App for Exploring scRNA-seq Data Processed in ``Seurat``
+> A ``Shiny`` App for Exploring scRNA-seq Data Processed in ``Seurat``
 
 A simple, one-command package which runs an interactive dashboard capable of common visualizations for single cell RNA-seq. ``SeuratExplorer`` requires a processed ``Seurat`` object, which is saved as ``rds`` or ``qs2`` file.
 
 ## Why build this R package
 
-> Currently, there is still no good tools for visualising the analysis results from ``Seurat``, when the bioinformatics analyst hands over the results to the user, if the user does not have any R language foundation, it is still difficult to retrieve the results and re-analysis on their own, and this R package is designed to help such users to visualize and explore the anaysis results. The only thing to do for such users is to configure R and Rstudio on their own computers, and then install ``SeuratExplorer``, without any other operations, an optional way is to upload the ``Seurat object`` file to a server which has been deployed with ``shinyserver`` and ``SeuratExplorer``.
+> Currently, there are no comprehensive tools for visualizing Seurat analysis results that are accessible to users without programming expertise. When bioinformatics analysts hand over results to end users, those without R programming knowledge often struggle to retrieve and re-analyze the data independently. ``SeuratExplorer`` is designed to bridge this gap by enabling such users to visualize and explore analysis results through an intuitive graphical interface. The only requirement for users is to configure R and RStudio on their computers and install ``SeuratExplorer``. Alternatively, users can upload their ``Seurat object`` files to a server deployed with ``Shiny Server`` and ``SeuratExplorer`` for browser-based access.
 
-> Essentially, what ``SeuratExplorer`` done is just to perform visual operations for command line tools from ``Seurat`` or other packages.
+> Essentially, ``SeuratExplorer`` provides graphical interfaces for command-line tools from ``Seurat`` and other related packages, making complex analyses accessible without programming.
 
 ### Key Features
 
@@ -145,9 +145,9 @@ See function documentation for detailed usage examples.
 
 ## Deploy on server
 
-You can deploy this app on a shiny server, which allows people to view their data on a webpage by uploading the data to server.
+You can deploy this app on a Shiny Server, which allows users to visualize their data through a web interface by uploading the data to the server.
 
-A live demo: Upload an Rds or qs2 file, with file size no more than 20GB, to [Demo Site](http://www.nibs.ac.cn:666/SeuratExplorer/). You can download a mini demo data from [github](https://github.com/fentouxungui/SeuratExplorerServer/blob/main/inst/extdata/source-data/fly/Rds-file/G101_PC20res04.rds).
+**Live Demo**: Upload an `.rds` or `.qs2` file (up to 20GB) to the [Demo Site](http://www.nibs.ac.cn:666/SeuratExplorer/). You can download sample demo data from [GitHub](https://github.com/fentouxungui/SeuratExplorerServer/blob/main/inst/extdata/source-data/fly/Rds-file/G101_PC20res04.rds).
 
 ```{r eval=FALSE}
 # app.R
@@ -161,7 +161,7 @@ launchSeuratExplorer()
 >
 > The Assay class stores single cell data. For typical scRNA-seq experiments, a Seurat object will have a single Assay ("RNA"). This assay will also store multiple 'transformations' of the data, including raw counts (@counts slot), normalized data (@data slot), and scaled data for dimensional reduction (@scale.data slot).
 
-SeuratExplorer allows for assay switching, thereby multiple data types can be supported, including:
+SeuratExplorer supports assay switching, enabling compatibility with multiple data types, including:
 
 **Single-cell Modalities:**
 
@@ -206,9 +206,9 @@ Different visualization features support different assay slots:
 
 ### Load data
 
-- support ``Seurat`` object saved as ``.rds`` or ``.qs2`` file.
+- Supports ``Seurat`` objects saved as ``.rds`` or ``.qs2`` files
 
-- support data processed by ``Seurat`` V5 and older versions. it may takes a while to update ``Seurat`` object when loading data.
+- Supports data processed by ``Seurat`` V5 and older versions. Note: It may take some time to update older ``Seurat`` objects when loading data
 
 ```{r echo = FALSE, message=FALSE, warning=FALSE}
 if(for_github){
@@ -220,23 +220,23 @@ if(for_github){
 
 ### Dimensional Reduction Plot
 
-- support options for **Dimension Reductions**
+- Supports selection of **dimensionality reduction methods** (UMAP, t-SNE, PCA, etc.)
 
-- support options for **Cluster Resolution**
+- Supports selection of **cluster resolutions**
 
-- support **split** plots
+- Supports **split** plots
 
-- support highlight selected clusters
+- Supports highlighting selected clusters
 
-- support adjust the height/width ratio of the plot
+- Supports adjusting the height/width ratio of the plot
 
-- support options for showing **cluster label**
+- Supports displaying **cluster labels**
 
-- support adjust label size
+- Supports adjusting label size
 
-- support adjust point size
+- Supports adjusting point size
 
-- support download plot in pdf format, what you see is what you get
+- Supports downloading plots in PDF format (WYSIWYG)
 
 **Example plots:**
 
@@ -250,21 +250,21 @@ if(for_github){
 
 ### Feature Plot
 
-- support display multiple genes simultaneous, genes names are case-insensitive. Tips: paste multiple genes from excel
+- Supports simultaneous display of multiple genes (gene names are case-insensitive). Tip: Paste multiple gene names directly from Excel
 
-- support options for **Dimension Reductions**
+- Supports selection of **dimensionality reduction methods**
 
-- support **split** plots
+- Supports **split** plots
 
-- support change colors for the lowest expression and highest expression
+- Supports customizing colors for lowest and highest expression levels
 
-- support adjust the height/width ratio of the plot
+- Supports adjusting the height/width ratio of the plot
 
-- support adjust point size
+- Supports adjusting point size
 
-- support download plot in pdf format, what you see is what you get
+- Supports downloading plots in PDF format (WYSIWYG)
 
-- support switch Assays which contain any one of the slots: counts, data, scale.data
+- Supports switching between assays containing any of the following slots: `counts`, `data`, `scale.data`
 
 **Example plots:**
 
@@ -280,23 +280,23 @@ if(for_github){
 
 ### Violin Plot
 
-- support display multiple genes simultaneous, genes names are case-insensitive. Tips: paste multiple genes from excel
+- Supports simultaneous display of multiple genes (gene names are case-insensitive). Tip: Paste multiple gene names directly from Excel
 
-- support options for **Cluster Resolution**
+- Supports selection of **cluster resolutions**
 
-- support **split** plots
+- Supports **split** plots
 
-- support **stack** and **flip** plot, and color mapping selection.
+- Supports **stacking** and **flipping** plots, with color mapping selection
 
-- support adjust point size and transparency
+- Supports adjusting point size and transparency
 
-- support adjust font size on x and y axis
+- Supports adjusting font sizes on x and y axes
 
-- support adjust the height/width ratio of the plot
+- Supports adjusting the height/width ratio of the plot
 
-- support download plot in pdf format, what you see is what you get
+- Supports downloading plots in PDF format (WYSIWYG)
 
-- support switch Assays which contain any one of the slots: counts, data, scale.data
+- Supports switching between assays containing any of the following slots: `counts`, `data`, `scale.data`
 
 **Example plots:**
 
@@ -317,25 +317,25 @@ if (for_github){
 
 ### Dot Plot
 
-- support display multiple genes simultaneous, genes names are case-insensitive. Tips: paste multiple genes from excel
+- Supports simultaneous display of multiple genes (gene names are case-insensitive). Tip: Paste multiple gene names directly from Excel
 
-- support options for **Cluster Resolution** and subset clusters
+- Supports selection of **cluster resolutions** and subsetting clusters
 
-- support **split** plots
+- Supports **split** plots
 
-- support cluster clusters
+- Supports clustering clusters
 
-- support rotate axis and flip coordinate
+- Supports rotating axes and flipping coordinates
 
-- support adjust point size and transparency
+- Supports adjusting point size and transparency
 
-- support adjust font size on x and y axis
+- Supports adjusting font sizes on x and y axes
 
-- support adjust the height/width ratio of the plot
+- Supports adjusting the height/width ratio of the plot
 
-- support download plot in pdf format, what you see is what you get
+- Supports downloading plots in PDF format (WYSIWYG)
 
-- support switch Assays which contain slot: data
+- Supports switching between assays containing the `data` slot
 
 **Example plots:**
 
@@ -352,23 +352,23 @@ if (for_github) {
 
 ### Heatmap for cell level expression
 
-- support display multiple genes simultaneous, genes names are case-insensitive. Tips: paste multiple genes from excel
+- Supports simultaneous display of multiple genes (gene names are case-insensitive). Tip: Paste multiple gene names directly from Excel
 
-- support options for **Cluster Resolution** and reorder clusters
+- Supports selection of **cluster resolutions** and reordering clusters
 
-- support adjust font size and rotation angle of cluster label, and flip coordinate
+- Supports adjusting font size and rotation angle of cluster labels, and flipping coordinates
 
-- support adjust the height of group bar
+- Supports adjusting the height of group bars
 
-- support adjust the gap size between groups
+- Supports adjusting the gap size between groups
 
-- support adjust the font size of gene names
+- Supports adjusting the font size of gene names
 
-- support adjust the height/width ratio of the plot
+- Supports adjusting the height/width ratio of the plot
 
-- support download plot in pdf format, what you see is what you get
+- Supports downloading plots in PDF format (WYSIWYG)
 
-- support Assay switch
+- Supports assay switching
 
 **Example plots:**
 
@@ -382,19 +382,19 @@ if (for_github) {
 
 ### Heatmap for group averaged expression
 
-- support display multiple genes simultaneous, genes names are case-insensitive. Tips: paste multiple genes from excel
+- Supports simultaneous display of multiple genes (gene names are case-insensitive). Tip: Paste multiple gene names directly from Excel
 
-- support options for **Cluster Resolution** and reorder clusters
+- Supports selection of **cluster resolutions** and reordering clusters
 
-- support adjust font size and rotation angle of cluster label
+- Supports adjusting font size and rotation angle of cluster labels
 
-- support adjust the font size of gene names
+- Supports adjusting the font size of gene names
 
-- support adjust the height/width ratio of the plot
+- Supports adjusting the height/width ratio of the plot
 
-- support download plot in pdf format, what you see is what you get
+- Supports downloading plots in PDF format (WYSIWYG)
 
-- support switch Assays which contain any one of the slots: data, scale.data
+- Supports switching between assays containing any of the following slots: `data`, `scale.data`
 
 **Example plots:**
 
@@ -410,21 +410,21 @@ if (for_github) {
 
 ### Ridge Plot
 
-- support display multiple genes simultaneous, genes names are case-insensitive. Tips: paste multiple genes from excel
+- Supports simultaneous display of multiple genes (gene names are case-insensitive). Tip: Paste multiple gene names directly from Excel
 
-- support options for **Cluster Resolution** and reorder clusters
+- Supports selection of **cluster resolutions** and reordering clusters
 
-- support adjust column numbers
+- Supports adjusting the number of columns
 
-- support stack plot and color mapping
+- Supports stacking plots and color mapping
 
-- support adjust font size on x and y axis
+- Supports adjusting font sizes on x and y axes
 
-- support adjust the height/width ratio of the plot
+- Supports adjusting the height/width ratio of the plot
 
-- support download plot in pdf format, what you see is what you get
+- Supports downloading plots in PDF format (WYSIWYG)
 
-- support switch Assays which contain any one of the slots: counts, data, scale.data
+- Supports switching between assays containing any of the following slots: `counts`, `data`, `scale.data`
 
 **Example plots:**
 
@@ -438,11 +438,11 @@ if (for_github) {
 
 ### Plot Cell Percentage
 
-- support facet
+- Supports faceting
 
-- support adjust the height/width ratio of the plot
+- Supports adjusting the height/width ratio of the plot
 
-- support download plot in pdf format, what you see is what you get
+- Supports downloading plots in PDF format (WYSIWYG)
 
 **Example plots:**
 
@@ -458,17 +458,17 @@ if (for_github) {
 
 ### Find Cluster Markers and DEGs Analysis
 
-This usually takes longer, please wait patiently.Please save the results before start a new analysis, the old results will be overwritten by the new results, the results can be downloaded as ``csv`` format.
+This analysis typically requires more computation time. Please wait patiently for results to complete. **Important**: Save your results before starting a new analysis, as previous results will be overwritten. Results can be downloaded in ``csv`` format.
 
-#### Support two ways
+#### Two analysis modes supported
 
-- support find markers for all clusters
+- **Find markers for all clusters**: Identifies marker genes for each cluster
 
-- support calculate DEGs for self-defined two groups, you can subset cells before calculate DEGs between two groups, default use all cells of two groups.
+- **Calculate DEGs for custom groups**: Compare differential expression between two user-defined groups. You can subset cells before calculating DEGs between groups. By default, all cells from both groups are used
 
-You can modify part calculation parameters before a analysis.
+You can modify calculation parameters before starting the analysis.
 
-- support switch Assays which contain any one of the slots: counts, data
+- Supports switching between assays containing any of the following slots: `counts`, `data`
 
 **Screen shots:**
 
@@ -507,17 +507,17 @@ if (for_github) {
 
 ### Top Expressed Features
 
-Highly expressed genes can reflect the main functions of cells, there two ways to do this. the first - ``Find Top Genes by Cell`` could find gene only high express in a few cells, while the second - ``Find Top Genes by Accumulated UMI counts`` is biased to find the highly expressed genes in most cells by accumulated UMI counts.
+Highly expressed genes can reflect the main functions of cells. There are two approaches to identifying these genes: ``Find Top Genes by Cell`` identifies genes that are highly expressed in individual cells (even if only in a few cells), while ``Find Top Genes by Accumulated UMI counts`` tends to find genes with high accumulated expression across most cells in a cluster.
 
-- support Assay switch
+- Supports assay switching
 
 #### 1. Find Top Genes by Cell
 
-#### How?
+#### How it works
 
-Step1: for each cell, find genes that has high UMI percentage, for example, if a cell has 10000 UMIs, and the ``UMI percentage cutoff`` is set to 0.01, then all genes that has more than 10000 * 0.01 = 100 UMIs is thought to be the highly expressed genes for this cell.
+**Step 1**: For each cell, identify genes with high UMI percentage. For example, if a cell has 10,000 UMIs and the ``UMI percentage cutoff`` is set to 0.01, all genes with more than 10,000 × 0.01 = 100 UMIs are considered highly expressed in that cell.
 
-Step2: summary those genes for each cluster, firstly get all highly expressed genes in a cluster, some genes may has less cells, then for each gene, count cells in which this genes is highly expressed, and also calculate the mean and median UMI percentage in those highly expressed cells.
+**Step 2**: Summarize these genes for each cluster. First, collect all highly expressed genes in a cluster. For each gene, count the number of cells where it is highly expressed, and calculate the mean and median UMI percentage in those highly expressed cells.
 
 
 ```{r echo = FALSE, out.width="80%"}
@@ -530,28 +530,28 @@ if (for_github) {
 
 #### Output description
 
-- ``celltype``: the cluster name which is define by ``Choose A Cluster Resolution``
+- ``celltype``: The cluster name as defined by ``Choose A Cluster Resolution``
 
-- ``total.cells``: total cell in this cluster
+- ``total.cells``: Total number of cells in this cluster
 
-- ``Gene``: this Gene is highly expressed in at least 1 cell in this cluster
+- ``Gene``: Gene that is highly expressed in at least 1 cell in this cluster
 
-- ``total.pos.cells``: how many cells express this gene
+- ``total.pos.cells``: Number of cells that express this gene
 
-- ``total.UMI.pct``: (all UMIs of this gene)/(total UMIs of this cluster)
+- ``total.UMI.pct``: (All UMIs of this gene) / (Total UMIs of this cluster)
 
-- ``cut.Cells``:  how many cells highly express this gene
+- ``cut.Cells``: Number of cells that highly express this gene
 
-- ``cut.pct.mean``: in those highly expressed cells, the mean expression percentage
+- ``cut.pct.mean``: Mean expression percentage in highly expressed cells
 
-- ``cut.pct.median``: in those highly expressed cells, the median expression percentage
+- ``cut.pct.median``: Median expression percentage in highly expressed cells
 
 
 #### 2. Find Top Genes by Mean UMI counts
 
-for each cluster, calculate the ``top n`` highly expressed genes by Mean UMI counts. if a cluster has less than 3 cells, this cluster will be escaped.
+For each cluster, calculate the ``top n`` highly expressed genes by mean UMI counts. Clusters with fewer than 3 cells will be skipped.
 
-- support switch Assays which contain slot: counts
+- Supports switching between assays containing the `counts` slot
 
 ```{r echo = FALSE, out.width="80%"}
 if (for_github) {
@@ -563,23 +563,23 @@ if (for_github) {
 
 #### Output description
 
-- ``CellType``: the cluster name which is define by ``Choose A Cluster Resolution``
+- ``CellType``: The cluster name as defined by ``Choose A Cluster Resolution``
 
-- ``total.cells``: total cell in this cluster
+- ``total.cells``: Total number of cells in this cluster
 
-- ``Gene``: the ``top n`` highly expressed genes 
+- ``Gene``: The ``top n`` highly expressed genes
 
-- ``total.pos.cells``: how many cells express this gene
+- ``total.pos.cells``: Number of cells that express this gene
 
-- ``MeanUMICounts``: (total accumulated UMI counts) / (total cells of this cluster)
+- ``MeanUMICounts``: (Total accumulated UMI counts) / (Total cells of this cluster)
 
-- ``PCT``:  (total accumulated UMI counts of the gene) / (total UMIs of cluster cells)
+- ``PCT``: (Total accumulated UMI counts of the gene) / (Total UMIs of cluster cells)
 
 ### Feature Summary
 
-Summary interested features by cluster, such as the positive cell percentage and mean/median expression level.
+Summarize features of interest by cluster, including positive cell percentage and mean/median expression levels.
 
-- support switch Assays which contain slot: data
+- Supports switching between assays containing the `data` slot
 
 ```{r echo = FALSE, out.width="80%"}
 if (for_github) {
@@ -591,31 +591,31 @@ if (for_github) {
 
 #### Output description
 
-- ``celltype``: the cluster name which is define by ``Choose A Cluster Resolution``
+- ``celltype``: The cluster name as defined by ``Choose A Cluster Resolution``
 
-- ``TotalCells``: total cell in this cluster
+- ``TotalCells``: Total number of cells in this cluster
 
-- ``Gene``: the input genes 
+- ``Gene``: The input genes
 
-- ``PCT``: the percentage of how many cells express this gene in this cluster
+- ``PCT``: The percentage of cells expressing this gene in this cluster
 
-- ``Expr.mean``: the mean normalized expression in this cluster
+- ``Expr.mean``: The mean normalized expression in this cluster
 
-- ``Expr.median``:  the median normalized expression in this cluster
+- ``Expr.median``: The median normalized expression in this cluster
 
 ### Feature Correlation Analysis
 
-Can calculate the correlation value of gene pairs within cells from a cluster, support pearson & spearman methods.
+Calculates correlation values for gene pairs within cells from a cluster. Supports both Pearson and Spearman correlation methods.
 
-- support switch Assays which contain slot: data
+- Supports switching between assays containing the `data` slot
 
-#### 3 ways to do
+#### Three analysis modes
 
-- ``Find Top Correlated Gene Pairs``: to find top 1000 correlated gene pairs
+- ``Find Top Correlated Gene Pairs``: Identifies the top 1000 correlated gene pairs
 
-- ``Find Correlated Genes for A Gene``: to find the most correlated genes for input genes
+- ``Find Correlated Genes for A Gene``: Finds the most correlated genes for user-specified genes
 
-- ``Calculate Correlation for A Gene List``: to calculate the correlation value for each pair of the input genes
+- ``Calculate Correlation for A Gene List``: Calculates correlation values for all pairs in a user-provided gene list
 
 ```{r echo = FALSE}
 if (for_github) {
@@ -635,32 +635,32 @@ if (for_github) {
 }
 ```
 
-- ``GeneA``: the first gene in a Gene pair
+- ``GeneA``: The first gene in a gene pair
 
-- ``GeneB``:  the second gene in a Gene pair
+- ``GeneB``: The second gene in a gene pair
 
-- ``correlation``: the correlation value
+- ``correlation``: The correlation value
 
-if nothing return, this is because the input genes has very low expression level, very low expressed genes will be removed before analysis.
+**Note**: If no results are returned, this is typically because the input genes have very low expression levels. Very lowly expressed genes are removed before analysis.
 
-### Rename cluster name
+### Rename cluster names
 
-You can rename cluster names, and changes will take effect immediately, while the raw Seurat object file will be never changed, once you close the session, the newly added annotation will be lost, You can download the old name and new name mapping file, and send it to technician to ask for permanent change.
+You can rename cluster names, and changes will take effect immediately. However, the original Seurat object file is never modified. Once you close the session, the new annotations will be lost. You can download a mapping file of old names to new names and send it to a bioinformatician to request permanent changes to the Seurat object.
 
 ### Search Features
 
-all features(genes) extracted from the row names of assay, can be used search features.
+All features (genes) extracted from the row names of the assay can be searched.
 
-- support switch Assays which contain any one of the slots: counts, data, scale.data
-- case-insensitive search for gene/feature names
-- view feature annotations for ATAC assays (requires Signac package)
-- copy multiple feature names for use in other analysis modules
+- Supports switching between assays containing any of the following slots: `counts`, `data`, `scale.data`
+- Case-insensitive search for gene/feature names
+- View feature annotations for ATAC assays (requires Signac package)
+- Copy multiple feature names for use in other analysis modules
 
 ### Cell Metadata
 
-The metadata of all cells extracted from the meta.data slot of Seurat object, which contains descriptive information for each cell, such as quality control metrics, cell type classifications, batch information, and experimental conditions. This metadata is crucial for organizing, filtering, integrating, and visualizing single-cell RNA-seq data.
+The metadata of all cells extracted from the meta.data slot of the Seurat object contains descriptive information for each cell, such as quality control metrics, cell type classifications, batch information, and experimental conditions. This metadata is crucial for organizing, filtering, integrating, and visualizing single-cell RNA-seq data.
 
-- support download cell metadata in ``csv`` format, which can be used for further analysis.
+- Supports downloading cell metadata in ``csv`` format for further analysis
 
 ```{r  echo = FALSE, message=FALSE, warning=FALSE}
 if(for_github){
@@ -704,7 +704,7 @@ images:
 
 ### About
 
-Yeah, it's the tutorial right here!
+You're reading the tutorial right now!
 
 ## Data Preparation Tips
 
