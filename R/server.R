@@ -155,7 +155,8 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
 
     # Order is ready if it's not null and contains expected cluster names (in any order)
-    if (!is.null(actual_order) && length(intersect(actual_order, expected_levels)) == length(actual_order)) {
+    # 有一种可能，就是两个分群有一样的分群levels, 这可能有什么后果吗？
+    if (!is.null(actual_order) && identical(sort(actual_order), sort(expected_levels))) {
       if (is.null(resolution_state$current_resolution) || resolution_state$current_resolution != input$DimClusterResolution) {
         resolution_state$current_resolution <- input$DimClusterResolution
         resolution_state$ready <- TRUE
@@ -231,10 +232,6 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                               multiple = TRUE)
   })
 
-  # Pixel (X) to Centimeter: 1 pixel (X)	= 0.0264583333 cm, if use this value,
-  # the picture is a little bit of small, unknown why.
-  px2cm <- 0.0264583333 * 1.5
-
   # Store the current plot dimensions
   dimplot_dims <- reactiveValues(width = 800, height = 720)
 
@@ -249,135 +246,8 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     dimplot_dims$height <- input$dimplot_height
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-  # Render resizable dimplot container (free resize, no aspect ratio lock)
   output$dimplot_resizable_ui <- renderUI({
-    div(
-      id = "dimplot_wrapper",
-      style = "
-        background-color: #f8f9fa;
-        border: 2px dashed #dee2e6;
-        border-radius: 8px;
-        padding: 20px;
-        position: relative;
-        overflow: visible;
-      ",
-      shinyjqui::jqui_resizable(
-        div(
-          id = "dimplot_inner",
-          style = "
-            width: 800px;
-            height: 720px;
-            overflow: hidden;
-            position: relative;
-          ",
-          plotOutput("dimplot", width = "100%", height = "100%")
-        ),
-        options = list(
-          minWidth = 400,
-          maxWidth = 1500,
-          minHeight = 300,
-          maxHeight = 1200,
-          handles = "s, e, se"  # Only enable south, east, and south-east handles
-        )
-      ),
-      # Add visual indicators for the resizable handle
-      tags$style(HTML("
-        /* Ensure resizable container works properly */
-        #dimplot_inner.ui-resizable {
-          position: relative !important;
-        }
-
-        /* Base handle styles - always visible */
-        .ui-resizable-handle {
-          position: absolute;
-          z-index: 9999 !important;
-          font-size: 0.1px;
-          display: block;
-        }
-
-        /* Bottom edge handle */
-        .ui-resizable-s {
-          height: 20px !important;
-          bottom: -10px !important;
-          left: 0 !important;
-          width: 100% !important;
-          cursor: s-resize;
-          background: rgba(0, 123, 255, 0.1) !important;
-          border-bottom: 4px solid #007bff !important;
-        }
-
-        .ui-resizable-s:hover {
-          background: rgba(0, 123, 255, 0.2) !important;
-          border-bottom: 5px solid #0056b3 !important;
-        }
-
-        /* Right edge handle */
-        .ui-resizable-e {
-          width: 20px !important;
-          right: -10px !important;
-          top: 0 !important;
-          height: 100% !important;
-          cursor: e-resize;
-          background: rgba(0, 123, 255, 0.1) !important;
-          border-right: 4px solid #007bff !important;
-        }
-
-        .ui-resizable-e:hover {
-          background: rgba(0, 123, 255, 0.2) !important;
-          border-right: 5px solid #0056b3 !important;
-        }
-
-        /* Bottom-right corner handle */
-        .ui-resizable-se {
-          bottom: -10px !important;
-          right: -10px !important;
-          width: 30px !important;
-          height: 30px !important;
-          cursor: se-resize;
-          background: conic-gradient(from 225deg, transparent 0deg, transparent 90deg, #007bff 90deg, #007bff 180deg, transparent 180deg) !important;
-          border: 3px solid #007bff !important;
-          border-radius: 4px !important;
-        }
-
-        .ui-resizable-se:hover {
-          background: conic-gradient(from 225deg, transparent 0deg, transparent 90deg, #0056b3 90deg, #0056b3 180deg, transparent 180deg) !important;
-          transform: scale(1.15);
-        }
-
-        /* Make plot canvas visible */
-        #dimplot {
-          display: block !important;
-        }
-      ")),
-      # JavaScript to sync plot dimensions with resizable container
-      tags$script(HTML("
-        $(function() {
-          var updateDimensions = function() {
-            var container = $('#dimplot_inner');
-            var width = container.width();
-            var height = container.height();
-            Shiny.setInputValue('dimplot_width', width, {priority: 'event'});
-            Shiny.setInputValue('dimplot_height', height, {priority: 'event'});
-          };
-
-          // Initial dimensions
-          updateDimensions();
-
-          // Update on resize
-          var resizeTimer;
-          $('#dimplot_inner').on('resize', function(e, ui) {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(function() {
-              Shiny.setInputValue('dimplot_width', ui.size.width, {priority: 'event'});
-              Shiny.setInputValue('dimplot_height', ui.size.height, {priority: 'event'});
-            }, 100);
-          });
-
-          // Update periodically as a fallback
-          setInterval(updateDimensions, 2000);
-        });
-      "))
-    )
+    create_resizable_plot_ui(plot_id = 'dimplot', initial_width = 800, initial_height = 720)
   })
 
   output$dimplot <- renderPlot({
@@ -422,9 +292,10 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
     ggplot2::ggsave(paste0(temp_dir,"/dimplot.pdf"),
                     p,
-                    width = dimplot_dims$width * px2cm,
-                    height = dimplot_dims$height * px2cm,
-                    units = "cm",
+                    width = dimplot_dims$width,
+                    height = dimplot_dims$height,
+                    units = "px",
+                    scale = 5,
                     limitsize = FALSE)
     return(p)
   }, height = function(){
@@ -461,11 +332,9 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   # inform extra qc options for Gene symbol input
   output$Featurehints.UI <- renderUI({
     if(verbose){message("SeuratExplorer: preparing Featurehints.UI...")}
-    helpText(strong(paste("Also supports: ",
-                          paste(data$extra_qc_options, collapse = " "), ".",
-                          sep = "")),
-             br(),
-             strong("Tips: You can paste multiple genes from a column in excel."),style = "font-size:12px;")
+    p(paste0("Tips: also supports ", paste(data$extra_qc_options, collapse = " "),
+            "; you can paste multiple genes from a column in excel."),
+      style = "font-size: 12px; margin: 0; color: #004085;")
   })
 
 
@@ -502,6 +371,24 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   #     features_dimplot$features_current <- features_input
   #   }
   # })
+
+  # Store the current plot dimensions
+  featureplot_dims <- reactiveValues(width = 800, height = 720)
+
+  # Custom message handlers to update plot dimensions from JavaScript
+  observeEvent(input$featureplot_width, {
+    req(input$featureplot_width)
+    featureplot_dims$width <- input$featureplot_width
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
+  observeEvent(input$featureplot_height, {
+    req(input$featureplot_height)
+    featureplot_dims$height <- input$featureplot_height
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
+  output$featureplot_resizable_ui <- renderUI({
+    create_resizable_plot_ui(plot_id = 'featureplot', initial_width = 800, initial_height = 720)
+  })
 
   output$featureplot <- renderPlot({
     req(input$FeatureSlot)
@@ -562,19 +449,21 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
     ggplot2::ggsave(paste0(temp_dir,"/featureplot.pdf"),
                     p,
-                    width = session$clientData$output_featureplot_width * px2cm,
-                    height = session$clientData$output_featureplot_width * input$FeaturePlotHWRatio * px2cm,
-                    units = "cm",
+                    width = featureplot_dims$width,
+                    height = featureplot_dims$height,
+                    units = "px",
+                    scale = 5,
                     limitsize = FALSE)
     return(p)
-  }, height = function(){session$clientData$output_featureplot_width * input$FeaturePlotHWRatio})
+  }, height = function(){if (is.null(input$featureplot_height)) 720 else input$featureplot_height})
   # box plot: height = width default
 
 
   output$downloadfeatureplot <- downloadHandler(
     filename = function(){'featureplot.pdf'},
     content = function(file) {
-      if (file.exists(paste0(temp_dir,"/featureplot.pdf"))) { # problem: will throw an error when file not exists; or with a uncorrected input, will download the pic of previous corrected input.
+      if (file.exists(paste0(temp_dir,"/featureplot.pdf"))) {
+        # problem: will throw an error when file not exists; or with a uncorrected input, will download the pic of previous corrected input.
         file.copy(paste0(temp_dir,"/featureplot.pdf"), file, overwrite=TRUE)
       }
     })

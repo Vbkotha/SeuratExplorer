@@ -90,12 +90,15 @@ explorer_body_ui <- function(tab_list){
   tab_list[["featureplot"]] = tabItem(tabName = "featureplot",
                                       fluidRow(
                                         box(title = "Features on Dimensional Reduction Plot",
-                                            withSpinner(plotOutput("featureplot",height = "auto")), # Add a spinner that shows when an output is recalculating
+                                            uiOutput("featureplot_resizable_ui"),
                                             div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadfeatureplot",style = "bordered",color = "primary")),
                                             width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                         box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                             textAreaInput("FeatureGeneSymbol", "Gene Symbol:", value = "", height = '80px', resize = "vertical"),
-                                            withSpinner(uiOutput("Featurehints.UI"), proxy.height = "10px"),
+                                            div(
+                                              style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 5px; border-radius: 4px;",
+                                              uiOutput("Featurehints.UI")
+                                            ),
                                             withSpinner(uiOutput("FeatureDimensionReduction.UI"), proxy.height = "10px"),
                                             withSpinner(uiOutput("FeatureAssays.UI"), proxy.height = "10px"),
                                             withSpinner(uiOutput("FeatureAssaySlots.UI"), proxy.height = "10px"),
@@ -110,7 +113,11 @@ explorer_body_ui <- function(tab_list){
                                             sliderInput("FeatureMinCutoff", label = "Minimum expression cutoff by quantile:", min = 0, max = 100, value = 0),
                                             sliderInput("FeatureMaxCutoff", label = "Maximum expression cutoff by quantile::", min = 0, max = 100, value = 100),
                                             sliderInput("FeaturePointSize", label = "Point Size:", min = 0.001, max = 5, value = 0.8),
-                                            sliderInput("FeaturePlotHWRatio", label = "Adjust Height/Width Ratio:", min = 0.1, max = 10, value = 0.9)
+                                            hr(),
+                                            div(
+                                              style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 10px; border-radius: 4px;",
+                                              p("🖱️ Tip: Drag the right or bottom edge to resize the plot", style = "font-size: 12px; margin: 0; color: #004085;")
+                                            )
                                         )
                                       )
   )
