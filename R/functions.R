@@ -922,7 +922,7 @@ check_allowed_chars <- function(text_string) {
 }
 
 
-
+# create_resizable_plot_ui is a function created by Claude code
 create_resizable_plot_ui <- function(plot_id, initial_width = 800, initial_height = 720) {
   div(
     id = paste0(plot_id, "_wrapper"),
@@ -949,7 +949,7 @@ create_resizable_plot_ui <- function(plot_id, initial_width = 800, initial_heigh
         minWidth = 400,
         maxWidth = 1500,
         minHeight = 300,
-        maxHeight = 1200,
+        maxHeight = 3200,
         handles = "s, e, se"  # Only enable south, east, and south-east handles
       )
     ),

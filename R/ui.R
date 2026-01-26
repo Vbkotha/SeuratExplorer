@@ -61,7 +61,6 @@ explorer_body_ui <- function(tab_list){
                                   fluidRow(
                                     box(title = "Dimensional Reduction Plot",
                                         uiOutput("dimplot_resizable_ui"),
-                                        # withSpinner(plotOutput("dimplot_resizable_ui",height = "auto")), # Add a spinner that shows when an output is recalculating
                                         # show the button on right end, refer to: https://stackoverflow.com/questions/28749693/shiny-r-aligning-buttons
                                         div(style = "display:inline-block; float:right",downloadBttn(outputId = "downloaddimplot",style = "bordered",color = "primary")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
@@ -79,11 +78,8 @@ explorer_body_ui <- function(tab_list){
                                         checkboxInput("DimShowLegend",label = "Show Legend", TRUE),
                                         sliderInput("DimLabelSize", label = "Label Size:", min = 0, max = 10, value = 7),
                                         sliderInput("DimPointSize", label = "Point Size", min = 0.001, max = 2, value = 0.8),
-                                        hr(),
-                                        div(
-                                          style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 10px; border-radius: 4px;",
-                                          p("🖱️ Tip: Drag the right or bottom edge to resize the plot", style = "font-size: 12px; margin: 0; color: #004085;")
-                                        )
+                                        checkboxInput("DimPlotMode",label = "Automatically adjust plotting area", TRUE),
+                                        uiOutput("dimplot_size_ui")
                                     )
                                   )
   )
@@ -113,23 +109,23 @@ explorer_body_ui <- function(tab_list){
                                             sliderInput("FeatureMinCutoff", label = "Minimum expression cutoff by quantile:", min = 0, max = 100, value = 0),
                                             sliderInput("FeatureMaxCutoff", label = "Maximum expression cutoff by quantile::", min = 0, max = 100, value = 100),
                                             sliderInput("FeaturePointSize", label = "Point Size:", min = 0.001, max = 5, value = 0.8),
-                                            hr(),
-                                            div(
-                                              style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 10px; border-radius: 4px;",
-                                              p("🖱️ Tip: Drag the right or bottom edge to resize the plot", style = "font-size: 12px; margin: 0; color: #004085;")
-                                            )
+                                            checkboxInput("FeaturePlotMode",label = "Automatically adjust plotting area", TRUE),
+                                            uiOutput("featureplot_size_ui")
                                         )
                                       )
   )
   tab_list[["vlnplot"]] = tabItem(tabName = "vlnplot",
                                   fluidRow(
                                     box(title = "Features Violin Plot",
-                                        withSpinner(plotOutput("vlnplot",height = "auto")), # Add a spinner that shows when an output is recalculating
+                                        uiOutput("vlnplot_resizable_ui"),
                                         div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadvlnplot",style = "bordered",color = "primary")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         textAreaInput("VlnGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
-                                        withSpinner(uiOutput("Vlnhints.UI"), proxy.height = "10px"),
+                                        div(
+                                          style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 5px; border-radius: 4px;",
+                                          uiOutput("Vlnhints.UI")
+                                        ),
                                         withSpinner(uiOutput("VlnClusterResolution.UI"), proxy.height = "10px"),
                                         withSpinner(uiOutput("VlnIdentsSelected.UI"), proxy.height = "10px"),
                                         bsCollapse(id = "collapseVlnplot", open = "0",
@@ -163,19 +159,23 @@ explorer_body_ui <- function(tab_list){
                                         sliderInput("VlnPointAlpha", label = "Point Alpha:", min = 0, max = 1, value = 1),
                                         sliderInput("VlnXlabelSize", label = "x Axis Label Size:", min = 0, max = 20, value = 14),
                                         sliderInput("VlnYlabelSize", label = "Y Axis Label Size:", min = 0, max = 20, value = 10),
-                                        sliderInput("VlnPlotHWRatio", label = "Adjust Height/Width Ratio:", min = 0.1, max = 8, value = 0.9)
+                                        checkboxInput("VlnPlotMode",label = "Automatically adjust plotting area", TRUE),
+                                        uiOutput("vlnplot_size_ui")
                                     )
                                   )
   )
   tab_list[["dotplot"]] = tabItem(tabName = "dotplot",
                                   fluidRow(
                                     box(title = "Features Dot Plot",
-                                        withSpinner(plotOutput("dotplot",height = "auto")), # Add a spinner that shows when an output is recalculating
+                                        uiOutput("dotplot_resizable_ui"),
                                         div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloaddotplot",style = "bordered",color = "primary")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         textAreaInput("DotGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
-                                        withSpinner(uiOutput("Dothints.UI"), proxy.height = "10px"),
+                                        div(
+                                          style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 5px; border-radius: 4px;",
+                                          uiOutput("Dothints.UI")
+                                        ),
                                         withSpinner(uiOutput("DotClusterResolution.UI"), proxy.height = "10px"),
                                         withSpinner(uiOutput("DotIdentsSelected.UI"), proxy.height = "10px"),
                                         bsCollapse(id = "collapseDotplot", open = "0",
@@ -195,7 +195,8 @@ explorer_body_ui <- function(tab_list){
                                         sliderInput("DotDotScale", label = "Dot Scale:", min = 1, max = 12, value = 6),
                                         sliderInput("DotXlabelSize", label = "x Axis Label Size:", min = 0, max = 20, value = 14),
                                         sliderInput("DotYlabelSize", label = "Y Axis Label Size:", min = 0, max = 20, value = 10),
-                                        sliderInput("DotPlotHWRatio", label = "Adjust Height/Width Ratio:", min = 0.1, max = 8, value = 0.9)
+                                        checkboxInput("DotPlotMode",label = "Automatically adjust plotting area", TRUE),
+                                        uiOutput("dotplot_size_ui")
                                     )
                                   )
   )
@@ -290,7 +291,7 @@ explorer_body_ui <- function(tab_list){
   tab_list[["cellratioplot"]] = tabItem(tabName = "cellratioplot",
                                     fluidRow(
                                       box(title = "Cell Percentage Plot",
-                                          withSpinner(plotOutput("cellratioplot",height = "auto")), # Add a spinner that shows when an output is recalculating
+                                          uiOutput("cellratioplot_resizable_ui"),
                                           div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadcellratioplot",style = "bordered",color = "primary")),
                                           div(style = "margin-top: 50px;",
                                               hr(),
@@ -325,7 +326,8 @@ explorer_body_ui <- function(tab_list){
                                           sliderInput("CellratioColumnWidth", label = "Column width:", min = 0, max = 1, value = 0.7),
                                           sliderInput("CellratioFlowAlpha", label = "Flow alpha:", min = 0, max = 1, value = 0.3),
                                           sliderInput("CellratioFlowCurve", label = "Flow curve:", min = 0, max = 1, value = 0.3),
-                                          sliderInput("CellratioplotHWRatio", label = "Adjust Height/Width Ratio:", min = 0.1, max = 4, value = 0.9)
+                                          checkboxInput("CellratioMode",label = "Automatically adjust plotting area", TRUE),
+                                          uiOutput("cellratioplot_size_ui")
                                       )
                                     )
   )
