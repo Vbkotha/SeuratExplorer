@@ -1173,9 +1173,10 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
     ggplot2::ggsave(paste0(temp_dir,"/heatmap.pdf"),
                     p,
-                    width = session$clientData$output_heatmap_width * px2cm,
-                    height = session$clientData$output_heatmap_width * input$HeatmapPlotHWRatio * px2cm,
-                    units = "cm",
+                    width = session$clientData$output_heatmap_width,
+                    height = session$clientData$output_heatmap_width * input$HeatmapPlotHWRatio,
+                    units = "px",
+                    scale = 5,
                     limitsize = FALSE)
     return(p)
   }, height = function(){session$clientData$output_heatmap_width * input$HeatmapPlotHWRatio})
@@ -1235,6 +1236,10 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     if(verbose){message("SeuratExplorer: updateCollapse for AveragedcollapseHeatmap...")}
     shinyBS::updateCollapse(session, "AveragedcollapseHeatmap", open = "0")
   }))
+
+  # Pixel (X) to Centimeter: 1 pixel (X)	= 0.0264583333 cm, if use this value,
+  # the picture is a little bit of small, unknown why.
+  px2cm <- 0.03
 
   output$averagedheatmap <- renderPlot({
     if(verbose){message("SeuratExplorer: preparing averagedheatmap...")}
@@ -1415,9 +1420,10 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
     ggplot2::ggsave(paste0(temp_dir,"/ridgeplot.pdf"),
                     p,
-                    width = session$clientData$output_ridgeplot_width * px2cm,
-                    height = session$clientData$output_ridgeplot_width * input$RidgeplotHWRatio * px2cm,
-                    units = "cm",
+                    width = session$clientData$output_ridgeplot_width,
+                    height = session$clientData$output_ridgeplot_width * input$RidgeplotHWRatio,
+                    units = "px",
+                    scale = 5,
                     limitsize = FALSE)
     return(p)
   }, height = function(){session$clientData$output_ridgeplot_width * input$RidgeplotHWRatio})
