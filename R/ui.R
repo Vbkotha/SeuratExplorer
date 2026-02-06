@@ -203,12 +203,15 @@ explorer_body_ui <- function(tab_list){
   tab_list[["heatmap"]] = tabItem(tabName = "heatmap",
                                   fluidRow(
                                     box(title = "Features Heatmap Plot",
-                                        withSpinner(plotOutput("heatmap",height = "auto")), # Add a spinner that shows when an output is recalculating
+                                        uiOutput("heatmap_resizable_ui"),
                                         div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadheatmap",style = "bordered",color = "primary")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         textAreaInput("HeatmapGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
-                                        withSpinner(uiOutput("Heatmaphints.UI"), proxy.height = "10px"),
+                                        div(
+                                          style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 5px; border-radius: 4px;",
+                                          uiOutput("Heatmaphints.UI")
+                                        ),
                                         withSpinner(uiOutput("HeatmapClusterResolution.UI"), proxy.height = "10px"),
                                         withSpinner(uiOutput("HeatmapIdentsSelected.UI"), proxy.height = "10px"),
                                         bsCollapse(id = "collapseHeatmap", open = "0",
@@ -224,19 +227,23 @@ explorer_body_ui <- function(tab_list){
                                         sliderInput("HeatmapGroupBarHeight", label = "Cluster Group Bar Height:", min = 0, max = 0.1, value = 0.04, step = 0.01),
                                         sliderInput("HeatmapLineWidth", label = "Line Width:", min = 1, max = 10, value = 1),
                                         sliderInput("HeatmapFeatureTextSize", label = "Feature Text Size:", min = 0, max = 20, value = 10),
-                                        sliderInput("HeatmapPlotHWRatio", label = "Adjust Height/Width Ratio:", min = 0.1, max = 4, value = 0.9, step = 0.1)
+                                        checkboxInput("HeatmapPlotMode",label = "Automatically adjust plotting area", TRUE),
+                                        uiOutput("heatmap_size_ui")
                                     )
                                   )
   )
   tab_list[["averagedheatmap"]] = tabItem(tabName = "averagedheatmap",
                                   fluidRow(
                                     box(title = "Features Heatmap by Averaged Expression",
-                                        withSpinner(plotOutput("averagedheatmap",height = "auto")), # Add a spinner that shows when an output is recalculating
+                                        uiOutput("averagedheatmap_resizable_ui"),
                                         div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadaveragedheatmap",style = "bordered",color = "primary")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         textAreaInput("AveragedHeatmapGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
-                                        withSpinner(uiOutput("AveragedHeatmaphints.UI"), proxy.height = "10px"),
+                                        div(
+                                          style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 5px; border-radius: 4px;",
+                                          uiOutput("AveragedHeatmaphints.UI")
+                                        ),
                                         withSpinner(uiOutput("AveragedHeatmapClusterResolution.UI"), proxy.height = "10px"),
                                         withSpinner(uiOutput("AveragedHeatmapIdentsSelected.UI"), proxy.height = "10px"),
                                         bsCollapse(id = "collapseHeatmap", open = "0",
@@ -249,19 +256,23 @@ explorer_body_ui <- function(tab_list){
                                         sliderInput("AveragedHeatmapFeatureTextSize", label = "Feature Text Size:", min = 1, max = 20, value = 10),
                                         checkboxInput("AveragedHeatmapClusterClusters",label = "Cluster Clusters", FALSE),
                                         checkboxInput("AveragedHeatmapClusterFeatures",label = "Cluster Features", FALSE),
-                                        sliderInput("AveragedHeatmapPlotHWRatio", label = "Adjust Height/Width Ratio:", min = 0.1, max = 4, value = 0.9)
+                                        checkboxInput("AveragedHeatmapPlotMode",label = "Automatically adjust plotting area", TRUE),
+                                        uiOutput("averagedheatmap_size_ui")
                                     )
                                   )
   )
   tab_list[["ridgeplot"]] = tabItem(tabName = "ridgeplot",
                                     fluidRow(
                                       box(title = "Features Ridge Plot",
-                                          withSpinner(plotOutput("ridgeplot",height = "auto")), # Add a spinner that shows when an output is recalculating
+                                          uiOutput("ridgeplot_resizable_ui"),
                                           div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadridgeplot",style = "bordered",color = "primary")),
                                           width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                       box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                           textAreaInput("RidgeplotGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
-                                          withSpinner(uiOutput("Ridgeplothints.UI"), proxy.height = "10px"),
+                                          div(
+                                            style = "background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 5px; border-radius: 4px;",
+                                            uiOutput("Ridgeplothints.UI")
+                                          ),
                                           withSpinner(uiOutput("RidgeplotClusterResolution.UI"), proxy.height = "10px"),
                                           withSpinner(uiOutput("RidgeplotIdentsSelected.UI"), proxy.height = "10px"),
                                           bsCollapse(id = "collapseRidgeplot", open = "0",
@@ -284,7 +295,8 @@ explorer_body_ui <- function(tab_list){
                                           ),
                                           sliderInput("RidgeplotXlabelSize", label = "x Axis Label Size:", min = 0, max = 20, value = 14),
                                           sliderInput("RidgeplotYlabelSize", label = "Y Axis Label Size:", min = 0, max = 20, value = 10),
-                                          sliderInput("RidgeplotHWRatio", label = "Adjust Height/Width Ratio:", min = 0.1, max = 4, value = 0.9)
+                                          checkboxInput("RidgeplotPlotMode",label = "Automatically adjust plotting area", TRUE),
+                                          uiOutput("ridgeplot_size_ui")
                                       )
                                     )
   )

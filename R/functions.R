@@ -722,10 +722,6 @@ AverageHeatmap <- function(
 
   # get cells mean gene expression
   # check Seurat version first
-  print(object)
-  print(group.by)
-  print(assays)
-  print(slot)
   mean_gene_exp <- as.matrix(
       data.frame(
         Seurat::AverageExpression(object,
@@ -946,10 +942,10 @@ create_resizable_plot_ui <- function(plot_id, initial_width = 800, initial_heigh
         plotOutput(plot_id, width = "100%", height = "100%")
       ),
       options = list(
-        minWidth = 400,
-        maxWidth = 1500,
-        minHeight = 300,
-        maxHeight = 3200,
+        minWidth = 100,
+        maxWidth = 2000,
+        minHeight = 100,
+        maxHeight = 6000,
         handles = "s, e, se"  # Only enable south, east, and south-east handles
       )
     ),
@@ -1040,7 +1036,7 @@ create_resizable_plot_ui <- function(plot_id, initial_width = 800, initial_heigh
 
           // Update on resize
           var resizeTimer;
-          $('#dimplot_inner').on('resize', function(e, ui) {
+          $('#", plot_id, "_inner').on('resize', function(e, ui) {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(function() {
               Shiny.setInputValue('", plot_id, "_width', ui.size.width, {priority: 'event'});
