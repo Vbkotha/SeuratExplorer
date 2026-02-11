@@ -22,7 +22,7 @@ launchSeuratExplorer(
 
 \item{MaxInputFileSize}{set the limited upload file size}
 
-\item{dataset_dir}{server-side directory containing .rds/.qs2 datasets}
+\item{dataset_dir}{primary server-side directory containing .rds/.qs2 datasets; app also scans ~/session_data/mounted-data-readonly}
 
 \item{allow_browser_upload}{whether to show legacy browser upload input}
 }

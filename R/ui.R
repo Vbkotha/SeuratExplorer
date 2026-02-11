@@ -571,7 +571,7 @@ ui <-  function(){
                                       width = 12,
                                       collapsible = TRUE,
                                       solidHeader = TRUE,
-                                      p(strong("Server dataset directory:"), textOutput("dataset_dir_display", inline = TRUE)),
+                                      p(strong("Server dataset directories:"), textOutput("dataset_dir_display", inline = TRUE)),
                                       uiOutput("dataset_file_server_ui"),
                                       actionButton("dataset_refresh", "Refresh Dataset List", icon = icon("refresh")),
                                       conditionalPanel(

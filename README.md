@@ -112,8 +112,8 @@ You can customize the launch behavior with additional parameters:
   `12`)
 - `MaxInputFileSize`: Maximum upload file size in bytes (default:
   `20*1024^3`, i.e., 20GB)
-- `dataset_dir`: Server-side dataset directory to scan (default:
-  `"data"`)
+- `dataset_dir`: Primary server-side dataset directory to scan (default:
+  `"data"`). The app also scans `~/session_data/mounted-data-readonly`.
 - `allow_browser_upload`: Whether to show browser upload input
   (`FALSE` by default)
 
@@ -135,11 +135,11 @@ By default, `launchSeuratExplorer()` now uses **server-side dataset
 selection** instead of browser uploads.
 
 - Put `.rds` / `.qs2` Seurat object files in `dataset_dir`
-  (default: `./data`).
+  (default: `./data`) or in `~/session_data/mounted-data-readonly`.
 - The app lists available files in a dropdown and loads directly from
   server filesystem paths.
-- Only files under `dataset_dir` are allowed (path traversal is
-  blocked).
+- Only files under the allowed dataset directories are allowed (path
+  traversal is blocked).
 
 ``` r
 library(SeuratExplorer)

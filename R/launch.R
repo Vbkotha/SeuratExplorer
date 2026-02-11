@@ -8,7 +8,7 @@
 #' @param ReductionKeyWords key words used for prepare Reduction options
 #' @param SplitOptionMaxLevel max level cutoff for prepare Split options
 #' @param MaxInputFileSize set the limited upload file size
-#' @param dataset_dir server-side directory containing .rds/.qs2 datasets
+#' @param dataset_dir primary server-side directory containing .rds/.qs2 datasets; app also scans ~/session_data/mounted-data-readonly
 #' @param allow_browser_upload whether to show legacy browser upload input
 #'
 #' @import shiny

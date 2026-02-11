@@ -2803,6 +2803,8 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
 #'
 server <- function(input, output, session) {
   dataset_dir <- normalizePath(getOption("SeuratExplorerDatasetDir", "data"), mustWork = FALSE)
+  readonly_dataset_dir <- normalizePath("~/session_data/mounted-data-readonly", mustWork = FALSE)
+  dataset_dirs_allowed <- unique(c(dataset_dir, readonly_dataset_dir))
   allow_browser_upload <- isTRUE(getOption("SeuratExplorerAllowBrowserUpload", FALSE))
 
   ## Dataset tab ----
@@ -2827,7 +2829,7 @@ server <- function(input, output, session) {
   dataset_choices <- reactiveVal(setNames(character(0), character(0)))
 
   refresh_dataset_choices <- function() {
-    dataset_choices(list_dataset_files(dataset_dir = dataset_dir))
+    dataset_choices(list_dataset_files(dataset_dir = dataset_dirs_allowed))
   }
 
   refresh_dataset_choices()
@@ -2836,14 +2838,14 @@ server <- function(input, output, session) {
     refresh_dataset_choices()
     if (length(dataset_choices()) == 0) {
       showNotification(
-        paste0("No .rds or .qs2 files found under: ", dataset_dir),
+        paste0("No .rds or .qs2 files found under: ", paste(dataset_dirs_allowed, collapse = " | ")),
         type = "message"
       )
     }
   }, ignoreInit = TRUE)
 
   output$dataset_dir_display <- renderText({
-    dataset_dir
+    paste(dataset_dirs_allowed, collapse = " | ")
   })
 
   output$allow_browser_upload <- reactive({
@@ -2857,8 +2859,8 @@ server <- function(input, output, session) {
     if (length(choices) == 0) {
       return(tags$div(
         class = "alert alert-info",
-        paste0("No dataset files found in ", dataset_dir,
-               ". Place .rds or .qs2 Seurat object files in this directory and click Refresh Dataset List.")
+        paste0("No dataset files found in: ", paste(dataset_dirs_allowed, collapse = " | "),
+               ". Place .rds or .qs2 Seurat object files in one of these directories and click Refresh Dataset List.")
       ))
     }
 
@@ -2877,13 +2879,18 @@ server <- function(input, output, session) {
                   message = "Please select a .rds or a .qs2 file"))
 
     if (identical(source_label, "server")) {
-      normalized_dataset_dir <- normalizePath(dataset_dir, mustWork = TRUE)
       normalized_path <- normalizePath(path, mustWork = TRUE)
-      dir_prefix <- paste0(normalized_dataset_dir, .Platform$file.sep)
+
+      existing_allowed_dirs <- dataset_dirs_allowed[dir.exists(dataset_dirs_allowed)]
+      normalized_allowed_dirs <- normalizePath(existing_allowed_dirs, mustWork = TRUE)
+      is_in_allowed_dir <- any(vapply(normalized_allowed_dirs, function(one_allowed_dir) {
+        dir_prefix <- paste0(one_allowed_dir, .Platform$file.sep)
+        identical(normalized_path, one_allowed_dir) || startsWith(normalized_path, dir_prefix)
+      }, logical(1)))
 
       validate(need(
-        expr = identical(normalized_path, normalized_dataset_dir) || startsWith(normalized_path, dir_prefix),
-        message = "Invalid dataset path: file must be inside dataset_dir"
+        expr = is_in_allowed_dir,
+        message = "Invalid dataset path: file must be inside an allowed dataset directory"
       ))
 
       path <- normalized_path
