@@ -22,7 +22,8 @@
 A simple, one-command package which runs an interactive dashboard
 capable of common visualizations for single cell RNA-seq.
 `SeuratExplorer` requires a processed `Seurat` object, which is saved as
-`rds` or `qs2` file.
+`rds` or `qs2` file. In hosted deployments, datasets can be loaded
+securely from a server-side directory (no browser upload required).
 
 ## Why build this R package
 
@@ -34,9 +35,9 @@ capable of common visualizations for single cell RNA-seq.
 > designed to bridge this gap by enabling such users to visualize and
 > explore analysis results through an intuitive graphical interface. The
 > only requirement for users is to configure R and RStudio on their
-> computers and install `SeuratExplorer`. Alternatively, users can
-> upload their `Seurat object` files to a server deployed with
-> `Shiny Server` and `SeuratExplorer` for browser-based access.
+> computers and install `SeuratExplorer`. For hosted/internal
+> deployments, operators can place `Seurat object` files on the server
+> filesystem and users select from a controlled whitelist directory.
 
 > Essentially, `SeuratExplorer` provides graphical interfaces for
 > command-line tools from `Seurat` and other related packages, making
@@ -111,26 +112,58 @@ You can customize the launch behavior with additional parameters:
   `12`)
 - `MaxInputFileSize`: Maximum upload file size in bytes (default:
   `20*1024^3`, i.e., 20GB)
+- `dataset_dir`: Server-side dataset directory to scan (default:
+  `"data"`)
+- `allow_browser_upload`: Whether to show browser upload input
+  (`FALSE` by default)
 
 ``` r
 # Example with custom parameters
 launchSeuratExplorer(
   verbose = TRUE,
   ReductionKeyWords = c("umap", "tsne", "pca"),
-  MaxInputFileSize = 10*1024^3  # 10GB
+  MaxInputFileSize = 10*1024^3,  # 10GB
+  dataset_dir = "/mnt/session_data/data",
+  allow_browser_upload = FALSE
+)
+```
+
+
+## Server-side datasets mode (recommended for hosted deployments)
+
+By default, `launchSeuratExplorer()` now uses **server-side dataset
+selection** instead of browser uploads.
+
+- Put `.rds` / `.qs2` Seurat object files in `dataset_dir`
+  (default: `./data`).
+- The app lists available files in a dropdown and loads directly from
+  server filesystem paths.
+- Only files under `dataset_dir` are allowed (path traversal is
+  blocked).
+
+``` r
+library(SeuratExplorer)
+launchSeuratExplorer(
+  dataset_dir = "/mnt/session_data/data",
+  allow_browser_upload = FALSE
+)
+```
+
+If you need legacy local-desktop upload behavior, enable it explicitly:
+
+``` r
+launchSeuratExplorer(
+  dataset_dir = "data",
+  allow_browser_upload = TRUE
 )
 ```
 
 ## Deploy on server
 
-You can deploy this app on a Shiny Server, which allows users to
-visualize their data through a web interface by uploading the data to
-the server.
-
-**Live Demo**: Upload an `.rds` or `.qs2` file (up to 20GB) to the [Demo
-Site](http://www.nibs.ac.cn:666/SeuratExplorer/). You can download
-sample demo data from
-[GitHub](https://github.com/fentouxungui/SeuratExplorerServer/blob/main/inst/extdata/source-data/fly/Rds-file/G101_PC20res04.rds).
+You can deploy this app on a Shiny Server for internal access. In
+server-side mode, users select from datasets already present on the
+server filesystem (`dataset_dir`) rather than uploading through the
+browser.
 
 ``` r
 # app.R
