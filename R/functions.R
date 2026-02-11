@@ -881,6 +881,41 @@ readSeurat <- function(path, verbose = FALSE){
   return(seu_obj)
 }
 
+#' List available server-side Seurat dataset files
+#'
+#' @param dataset_dir Directory (or directories) to scan for Seurat object files.
+#' @return Named character vector for shiny selectInput choices.
+list_dataset_files <- function(dataset_dir = "data") {
+  dataset_dirs <- unique(normalizePath(dataset_dir, mustWork = FALSE))
+  existing_dirs <- dataset_dirs[dir.exists(dataset_dirs)]
+
+  if (length(existing_dirs) == 0) {
+    return(setNames(character(0), character(0)))
+  }
+
+  files_by_dir <- lapply(existing_dirs, function(one_dir) {
+    list.files(
+      one_dir,
+      pattern = "\\.(rds|qs2)$",
+      ignore.case = TRUE,
+      full.names = TRUE
+    )
+  })
+
+  dataset_files <- unlist(files_by_dir, use.names = FALSE)
+
+  if (length(dataset_files) == 0) {
+    return(setNames(character(0), character(0)))
+  }
+
+  normalized_files <- unique(normalizePath(dataset_files, mustWork = TRUE))
+  labels <- vapply(normalized_files, function(one_file) {
+    paste0(basename(dirname(one_file)), "/", basename(one_file))
+  }, character(1))
+
+  setNames(normalized_files, labels)
+}
+
 
 # > SCT assay related bug:
 # https://github.com/satijalab/seurat/issues/8235; 2025.03.26, may be Seurat Package will solve this bug in future.
@@ -1051,4 +1086,3 @@ create_resizable_plot_ui <- function(plot_id, initial_width = 800, initial_heigh
     )
   )
 }
-

@@ -565,11 +565,23 @@ ui <-  function(){
 
   tab_list[["dataset"]] <- shinydashboard::tabItem(tabName = "dataset",
                                   fluidRow(
-                                    # upload a file
-                                    box(status = "primary", title = "Upload Data", width = 12, collapsible = TRUE, solidHeader = TRUE,
-                                        fileInput("dataset_file", "Choose A rds or qs2 file of Seurat Object:", accept = c('.rds', ".qs2")))
+                                    box(
+                                      status = "primary",
+                                      title = "Load Data",
+                                      width = 12,
+                                      collapsible = TRUE,
+                                      solidHeader = TRUE,
+                                      p(strong("Server dataset directories:"), textOutput("dataset_dir_display", inline = TRUE)),
+                                      uiOutput("dataset_file_server_ui"),
+                                      actionButton("dataset_refresh", "Refresh Dataset List", icon = icon("refresh")),
+                                      conditionalPanel(
+                                        condition = "output.allow_browser_upload",
+                                        tags$hr(),
+                                        fileInput("dataset_file", "Choose A rds or qs2 file of Seurat Object:", accept = c('.rds', ".qs2"))
+                                      )
                                     )
                                   )
+  )
 
   tab_list <- explorer_body_ui(tab_list = tab_list)
 

@@ -8,7 +8,9 @@ launchSeuratExplorer(
   verbose = FALSE,
   ReductionKeyWords = c("umap", "tsne"),
   SplitOptionMaxLevel = 12,
-  MaxInputFileSize = 20 * 1024^3
+  MaxInputFileSize = 20 * 1024^3,
+  dataset_dir = "data",
+  allow_browser_upload = FALSE
 )
 }
 \arguments{
@@ -19,6 +21,10 @@ launchSeuratExplorer(
 \item{SplitOptionMaxLevel}{max level cutoff for prepare Split options}
 
 \item{MaxInputFileSize}{set the limited upload file size}
+
+\item{dataset_dir}{primary server-side directory containing .rds/.qs2 datasets; app also scans ~/session_data/mounted-data-readonly}
+
+\item{allow_browser_upload}{whether to show legacy browser upload input}
 }
 \value{
 In-browser Shiny Application launch
