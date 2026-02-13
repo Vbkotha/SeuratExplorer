@@ -140,6 +140,8 @@ You can customize the launch behavior with additional parameters:
   `"data"`). The app also scans `~/session_data/mounted-data-readonly`.
 - `allow_browser_upload`: Whether to show browser upload input
   (`FALSE` by default)
+- `workspace_dir`: Base server directory for "Save to Workspace" outputs (default: `getwd()`)
+- `allow_browser_download`: Keep legacy browser download buttons (`FALSE` by default in hosted mode)
 
 ``` r
 # Example with custom parameters
@@ -148,7 +150,9 @@ launchSeuratExplorer(
   ReductionKeyWords = c("umap", "tsne", "pca"),
   MaxInputFileSize = 10*1024^3,  # 10GB
   dataset_dir = "/mnt/session_data/data",
-  allow_browser_upload = FALSE
+  allow_browser_upload = FALSE,
+  workspace_dir = "/mnt/session_data/exports",
+  allow_browser_download = FALSE
 )
 ```
 
@@ -162,6 +166,10 @@ selection** instead of browser uploads.
   (default: `./data`) or in `~/session_data/mounted-data-readonly`.
 - The app lists available files in a dropdown and loads directly from
   server filesystem paths.
+- Plot/table exports use **Save to Workspace** and write to the server
+  filesystem under `workspace_dir` (not local browser downloads).
+- Users can choose save folders only inside `workspace_dir` from a
+  restricted server folder list.
 - Only files under the allowed dataset directories are allowed (path
   traversal is blocked).
 
@@ -169,7 +177,9 @@ selection** instead of browser uploads.
 library(SeuratExplorer)
 launchSeuratExplorer(
   dataset_dir = "/mnt/session_data/data",
-  allow_browser_upload = FALSE
+  allow_browser_upload = FALSE,
+  workspace_dir = "/mnt/session_data/exports",
+  allow_browser_download = FALSE
 )
 ```
 
@@ -178,7 +188,8 @@ If you need legacy local-desktop upload behavior, enable it explicitly:
 ``` r
 launchSeuratExplorer(
   dataset_dir = "data",
-  allow_browser_upload = TRUE
+  allow_browser_upload = TRUE,
+  allow_browser_download = TRUE
 )
 ```
 

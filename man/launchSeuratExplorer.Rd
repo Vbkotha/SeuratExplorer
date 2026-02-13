@@ -10,7 +10,9 @@ launchSeuratExplorer(
   SplitOptionMaxLevel = 12,
   MaxInputFileSize = 20 * 1024^3,
   dataset_dir = "data",
-  allow_browser_upload = FALSE
+  allow_browser_upload = FALSE,
+  workspace_dir = getwd(),
+  allow_browser_download = FALSE
 )
 }
 \arguments{
@@ -25,6 +27,10 @@ launchSeuratExplorer(
 \item{dataset_dir}{primary server-side directory containing .rds/.qs2 datasets; app also scans ~/session_data/mounted-data-readonly}
 
 \item{allow_browser_upload}{whether to show legacy browser upload input}
+
+\item{workspace_dir}{base server directory used by "Save to Workspace" actions}
+
+\item{allow_browser_download}{whether to keep browser download buttons (legacy mode)}
 }
 \value{
 In-browser Shiny Application launch

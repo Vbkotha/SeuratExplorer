@@ -62,7 +62,7 @@ explorer_body_ui <- function(tab_list){
                                     box(title = "Dimensional Reduction Plot",
                                         uiOutput("dimplot_resizable_ui"),
                                         # show the button on right end, refer to: https://stackoverflow.com/questions/28749693/shiny-r-aligning-buttons
-                                        div(style = "display:inline-block; float:right",downloadBttn(outputId = "downloaddimplot",style = "bordered",color = "primary")),
+                                        div(style = "display:inline-block; float:right",uiOutput("downloaddimplot_ui")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         withSpinner(uiOutput("DimDimensionReduction.UI"), proxy.height = "10px"),
@@ -87,7 +87,7 @@ explorer_body_ui <- function(tab_list){
                                       fluidRow(
                                         box(title = "Features on Dimensional Reduction Plot",
                                             uiOutput("featureplot_resizable_ui"),
-                                            div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadfeatureplot",style = "bordered",color = "primary")),
+                                            div(style = "display:inline-block; float:right", uiOutput("downloadfeatureplot_ui")),
                                             width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                         box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                             textAreaInput("FeatureGeneSymbol", "Gene Symbol:", value = "", height = '80px', resize = "vertical"),
@@ -118,7 +118,7 @@ explorer_body_ui <- function(tab_list){
                                   fluidRow(
                                     box(title = "Features Violin Plot",
                                         uiOutput("vlnplot_resizable_ui"),
-                                        div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadvlnplot",style = "bordered",color = "primary")),
+                                        div(style = "display:inline-block; float:right", uiOutput("downloadvlnplot_ui")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         textAreaInput("VlnGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
@@ -168,7 +168,7 @@ explorer_body_ui <- function(tab_list){
                                   fluidRow(
                                     box(title = "Features Dot Plot",
                                         uiOutput("dotplot_resizable_ui"),
-                                        div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloaddotplot",style = "bordered",color = "primary")),
+                                        div(style = "display:inline-block; float:right", uiOutput("downloaddotplot_ui")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         textAreaInput("DotGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
@@ -204,7 +204,7 @@ explorer_body_ui <- function(tab_list){
                                   fluidRow(
                                     box(title = "Features Heatmap Plot",
                                         uiOutput("heatmap_resizable_ui"),
-                                        div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadheatmap",style = "bordered",color = "primary")),
+                                        div(style = "display:inline-block; float:right", uiOutput("downloadheatmap_ui")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         textAreaInput("HeatmapGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
@@ -236,7 +236,7 @@ explorer_body_ui <- function(tab_list){
                                   fluidRow(
                                     box(title = "Features Heatmap by Averaged Expression",
                                         uiOutput("averagedheatmap_resizable_ui"),
-                                        div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadaveragedheatmap",style = "bordered",color = "primary")),
+                                        div(style = "display:inline-block; float:right", uiOutput("downloadaveragedheatmap_ui")),
                                         width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                     box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                         textAreaInput("AveragedHeatmapGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
@@ -265,7 +265,7 @@ explorer_body_ui <- function(tab_list){
                                     fluidRow(
                                       box(title = "Features Ridge Plot",
                                           uiOutput("ridgeplot_resizable_ui"),
-                                          div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadridgeplot",style = "bordered",color = "primary")),
+                                          div(style = "display:inline-block; float:right", uiOutput("downloadridgeplot_ui")),
                                           width = 9, status = "primary", collapsible = TRUE, solidHeader = TRUE),
                                       box(title = "Settings", solidHeader = TRUE, status = "primary", width = 3,
                                           textAreaInput("RidgeplotGeneSymbol", "Gene Symbols:", value = "", height = '80px', resize = "vertical"),
@@ -304,7 +304,7 @@ explorer_body_ui <- function(tab_list){
                                     fluidRow(
                                       box(title = "Cell Percentage Plot",
                                           uiOutput("cellratioplot_resizable_ui"),
-                                          div(style = "display:inline-block; float:right", downloadBttn(outputId = "downloadcellratioplot",style = "bordered",color = "primary")),
+                                          div(style = "display:inline-block; float:right", uiOutput("downloadcellratioplot_ui")),
                                           div(style = "margin-top: 50px;",
                                               hr(),
                                               DT::dataTableOutput('cellratiodata'),
@@ -493,7 +493,7 @@ explorer_body_ui <- function(tab_list){
                                                      condition = "output.renameclusterscheck_OK",
                                                      div(style = "margin-top: 10px;",
                                                          actionButton("renameclustersSubmit", "Update", icon = shiny::icon("arrows-rotate"), class = "btn-primary"),
-                                                         downloadButton("renameclustersDownload", "Download", icon = shiny::icon("file-arrow-down"), class = "btn-primary")
+                                                         uiOutput("renameclustersDownload_ui")
                                                          ),
                                                    ))
                                              )
@@ -508,7 +508,7 @@ explorer_body_ui <- function(tab_list){
   tab_list[["cellmetadata"]] = tabItem(tabName = "cellmetadata",
                                      fluidRow(
                                        box(title = "Metadata of Cells", collapsible = TRUE, width = 12,solidHeader = TRUE, status = "primary", # align = "center",
-                                           withSpinner(tagList(downloadButton("download_meta_data","Download"),
+                                           withSpinner(tagList(uiOutput("download_meta_data_ui"),
                                                                DT::dataTableOutput('dataset_meta'))))
                                      )
   )
@@ -574,6 +574,10 @@ ui <-  function(){
                                       p(strong("Server dataset directories:"), textOutput("dataset_dir_display", inline = TRUE)),
                                       uiOutput("dataset_file_server_ui"),
                                       actionButton("dataset_refresh", "Refresh Dataset List", icon = icon("refresh")),
+                                      tags$hr(),
+                                      p(strong("Workspace save base directory:"), textOutput("workspace_base_dir_display", inline = TRUE)),
+                                      selectInput("workspace_folder", "Save folder (server)", choices = NULL),
+                                      actionButton("refresh_folders", "Refresh folders", icon = icon("folder-open")),
                                       conditionalPanel(
                                         condition = "output.allow_browser_upload",
                                         tags$hr(),
