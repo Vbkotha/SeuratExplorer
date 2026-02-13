@@ -96,6 +96,30 @@ install.packages("SeuratExplorer")
 - SeuratObject (\>= 5.3.0)
 - ggplot2 (\>= 4.0.1)
 
+
+### Troubleshooting install from source
+
+If you install from a local clone with `devtools::install(".")`, make sure
+R is currently in the package root (the folder that contains `DESCRIPTION`).
+Do **not** literally use `"/path/to/SeuratExplorer"` unless that directory
+actually exists on your machine.
+
+``` r
+# Verify current working directory is package root
+getwd()
+file.exists("DESCRIPTION")
+
+# If needed, set to your real path and install
+setwd("/workspace/SeuratExplorer")
+devtools::install(".", force = TRUE)
+```
+
+If you want to install directly from your fork on GitHub:
+
+``` r
+devtools::install_github("Vbkotha/SeuratExplorer")
+```
+
 ## Run app on local
 
 ``` r
