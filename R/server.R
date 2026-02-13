@@ -16,7 +16,7 @@
 #' @export
 #' @return server side functions related to `explorer_sidebar_ui`
 #'
-explorer_server <- function(input, output, session, data, verbose=FALSE){
+explorer_server <- function(input, output, session, data, verbose=FALSE, workspace_dir = getwd(), allow_browser_download = FALSE){
   temp_dir <- tempdir() # temporary directory, for save plots
 
   if (dir.exists(temp_dir)) {
@@ -24,12 +24,98 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   }
 
   dir.create(temp_dir, showWarnings = FALSE)
+  plot_cache <- reactiveValues()
   # to make shinyBS::updateCollapse() runs correctly, refer to: https://github.com/ebailey78/shinyBS/issues/92
   shiny::addResourcePath("sbs", system.file("www", package="shinyBS"))
 
   # Using an un-exported function from another R package:
   # https://stackoverflow.com/questions/32535773/using-un-exported-function-from-another-r-package
   subset_Seurat <- utils::getFromNamespace('subset.Seurat', 'SeuratObject')
+
+
+  list_workspace_folders <- function(base_dir) {
+    base_norm <- normalizePath(base_dir, winslash = "/", mustWork = FALSE)
+    if (!dir.exists(base_norm)) {
+      dir.create(base_norm, recursive = TRUE, showWarnings = FALSE)
+    }
+    if (!dir.exists(base_norm)) {
+      return(setNames(character(0), character(0)))
+    }
+
+    subdirs <- list.dirs(base_norm, recursive = FALSE, full.names = TRUE)
+    subdirs <- subdirs[dir.exists(subdirs)]
+    dirs <- unique(c(base_norm, subdirs))
+    labels <- vapply(dirs, function(one_dir) {
+      if (identical(one_dir, base_norm)) {
+        "."
+      } else {
+        paste0("./", basename(one_dir))
+      }
+    }, character(1))
+    setNames(dirs, labels)
+  }
+
+  validate_workspace_dir <- function(dest_dir, base_dir) {
+    base <- normalizePath(base_dir, winslash = "/", mustWork = TRUE)
+    dest <- normalizePath(dest_dir, winslash = "/", mustWork = TRUE)
+    if (!(identical(dest, base) || startsWith(dest, paste0(base, "/")))) {
+      stop("Invalid destination folder")
+    }
+    dest
+  }
+
+  append_export_log <- function(base_dir, plot_type, dataset_name, output_path) {
+    log_path <- file.path(base_dir, "export_log.csv")
+    row <- data.frame(
+      timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+      plot_type = plot_type,
+      dataset = dataset_name,
+      session_id = session$token,
+      output_path = output_path,
+      stringsAsFactors = FALSE
+    )
+    if (file.exists(log_path)) {
+      suppressWarnings(utils::write.table(row, log_path, sep = ",", row.names = FALSE, col.names = FALSE, append = TRUE))
+    } else {
+      suppressWarnings(utils::write.csv(row, log_path, row.names = FALSE))
+    }
+  }
+
+  save_plot_to_workspace <- function(plot_obj, plot_type, ext = "png", width = 10, height = 7, res = 300, dataset_name = "dataset", dest_dir = NULL) {
+    req(plot_obj)
+    dest_valid <- validate_workspace_dir(dest_dir, workspace_dir)
+    if (!dir.exists(dest_valid)) {
+      dir.create(dest_valid, recursive = TRUE, showWarnings = FALSE)
+    }
+    timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+    safe_dataset <- gsub("[^A-Za-z0-9_-]", "_", ifelse(is.null(dataset_name) || dataset_name == "", "dataset", dataset_name))
+    filename <- paste0(plot_type, "_", safe_dataset, "_", timestamp, ".", ext)
+    output_path <- file.path(dest_valid, filename)
+
+    if (tolower(ext) == "pdf") {
+      ggplot2::ggsave(filename = output_path, plot = plot_obj, width = width, height = height, units = "in", limitsize = FALSE)
+    } else {
+      ggplot2::ggsave(filename = output_path, plot = plot_obj, width = width, height = height, units = "in", dpi = res, limitsize = FALSE)
+    }
+
+    append_export_log(base_dir = workspace_dir, plot_type = plot_type, dataset_name = safe_dataset, output_path = output_path)
+    output_path
+  }
+
+  save_table_to_workspace <- function(df, table_type, ext = "csv", dataset_name = "dataset", dest_dir = NULL) {
+    dest_valid <- validate_workspace_dir(dest_dir, workspace_dir)
+    if (!dir.exists(dest_valid)) {
+      dir.create(dest_valid, recursive = TRUE, showWarnings = FALSE)
+    }
+    timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+    safe_dataset <- gsub("[^A-Za-z0-9_-]", "_", ifelse(is.null(dataset_name) || dataset_name == "", "dataset", dataset_name))
+    filename <- paste0(table_type, "_", safe_dataset, "_", timestamp, ".", ext)
+    output_path <- file.path(dest_valid, filename)
+    utils::write.csv(df, output_path, row.names = FALSE)
+    append_export_log(base_dir = workspace_dir, plot_type = table_type, dataset_name = safe_dataset, output_path = output_path)
+    output_path
+  }
+
 
   # batch define some output elements
   ## dimension reduction options for dimplot and featureplot
@@ -102,6 +188,64 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                               'FeatureSummaryAssay' = c('data'),
                               'FeatureCorrelationAssay' = c('data'),
                               'FeaturesDataframeAssay'= isolate(data$assay_slots))
+
+
+  output$workspace_base_dir_display <- renderText({
+    normalizePath(workspace_dir, winslash = "/", mustWork = FALSE)
+  })
+
+  refresh_workspace_folders <- function() {
+    choices <- list_workspace_folders(workspace_dir)
+    selected <- isolate(input$workspace_folder)
+    if (length(choices) == 0) return()
+    if (is.null(selected) || !selected %in% unname(choices)) {
+      selected <- normalizePath(workspace_dir, winslash = "/", mustWork = FALSE)
+    }
+    updateSelectInput(session, "workspace_folder", choices = choices, selected = selected)
+  }
+
+  observeEvent(input$refresh_folders, {
+    refresh_workspace_folders()
+    showNotification("Workspace folders refreshed", type = "message")
+  }, ignoreInit = TRUE)
+
+  observe({
+    refresh_workspace_folders()
+  })
+
+  save_or_download_ui <- function(download_id, save_id) {
+    if (allow_browser_download) {
+      shinyWidgets::downloadBttn(outputId = download_id, style = "bordered", color = "primary")
+    } else {
+      actionButton(save_id, "Save to Workspace", icon = shiny::icon("floppy-disk"), class = "btn-primary")
+    }
+  }
+
+  output$downloaddimplot_ui <- renderUI(save_or_download_ui("downloaddimplot", "savedimplot"))
+  output$downloadfeatureplot_ui <- renderUI(save_or_download_ui("downloadfeatureplot", "savefeatureplot"))
+  output$downloadvlnplot_ui <- renderUI(save_or_download_ui("downloadvlnplot", "savevlnplot"))
+  output$downloaddotplot_ui <- renderUI(save_or_download_ui("downloaddotplot", "savedotplot"))
+  output$downloadheatmap_ui <- renderUI(save_or_download_ui("downloadheatmap", "saveheatmap"))
+  output$downloadaveragedheatmap_ui <- renderUI(save_or_download_ui("downloadaveragedheatmap", "saveaveragedheatmap"))
+  output$downloadridgeplot_ui <- renderUI(save_or_download_ui("downloadridgeplot", "saveridgeplot"))
+  output$downloadcellratioplot_ui <- renderUI(save_or_download_ui("downloadcellratioplot", "savecellratioplot"))
+
+  output$renameclustersDownload_ui <- renderUI({
+    if (allow_browser_download) {
+      downloadButton("renameclustersDownload", "Download", icon = shiny::icon("file-arrow-down"), class = "btn-primary")
+    } else {
+      actionButton("renameclustersSave", "Save to Workspace", icon = shiny::icon("floppy-disk"), class = "btn-primary")
+    }
+  })
+
+  output$download_meta_data_ui <- renderUI({
+    if (allow_browser_download) {
+      downloadButton("download_meta_data", "Download")
+    } else {
+      actionButton("save_meta_data", "Save to Workspace", icon = shiny::icon("floppy-disk"), class = "btn-primary")
+    }
+  })
+
 
   filter_assay <- function(assay_info, allowed_slots){
     # assay_info is a list contains all slot names for each assay
@@ -323,6 +467,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                       scale = 5,
                       limitsize = FALSE)
     }
+    plot_cache$dimplot <- p
     return(p)
   }, height = function(){
     if (input$DimPlotMode) {
@@ -334,11 +479,13 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   # box plot: height = width default
 
   # refer to: https://stackoverflow.com/questions/14810409/how-to-save-plots-that-are-made-in-a-shiny-app
-  output$downloaddimplot <- downloadHandler(
+  if (allow_browser_download) {
+    output$downloaddimplot <- downloadHandler(
     filename = function(){'dimplot.pdf'},
     content = function(file) {
       file.copy(paste0(temp_dir,"/dimplot.pdf"), file, overwrite=TRUE)
     })
+  }
 
   ################################ Feature Plot
   # define slot Choice UI
@@ -505,6 +652,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                       scale = 5,
                       limitsize = FALSE)
     }
+    plot_cache$featureplot <- p
     return(p)
   }, height = function(){
     if (input$FeaturePlotMode) {
@@ -514,7 +662,8 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
   })
 
-  output$downloadfeatureplot <- downloadHandler(
+  if (allow_browser_download) {
+    output$downloadfeatureplot <- downloadHandler(
     filename = function(){'featureplot.pdf'},
     content = function(file) {
       if (file.exists(paste0(temp_dir,"/featureplot.pdf"))) {
@@ -522,6 +671,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
         file.copy(paste0(temp_dir,"/featureplot.pdf"), file, overwrite=TRUE)
       }
     })
+  }
 
   ################################ Violin Plot
   # Track ClustersSelected changes and whether order is ready
@@ -817,6 +967,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                       scale = 5,
                       limitsize = FALSE)
     }
+    plot_cache$vlnplot <- p
     return(p)
   }, height = function(){
     if (input$VlnPlotMode) {
@@ -826,13 +977,15 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
   })
 
-  output$downloadvlnplot <- downloadHandler(
+  if (allow_browser_download) {
+    output$downloadvlnplot <- downloadHandler(
     filename = function(){'vlnplot.pdf'},
     content = function(file) {
       if (file.exists(paste0(temp_dir,"/vlnplot.pdf"))) {
         file.copy(paste0(temp_dir,"/vlnplot.pdf"), file, overwrite=TRUE)
       }
     })
+  }
 
   ################################ Dot Plot
   # Track ClustersSelected changes and whether order is ready
@@ -1047,6 +1200,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                       limitsize = FALSE)
     }
 
+    plot_cache$dotplot <- p
     return(p)
   }, height = function(){
     if (input$DotPlotMode) {
@@ -1057,13 +1211,15 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   }
   )
 
-  output$downloaddotplot <- downloadHandler(
+  if (allow_browser_download) {
+    output$downloaddotplot <- downloadHandler(
     filename = function(){'dotplot.pdf'},
     content = function(file) {
       if (file.exists(paste0(temp_dir,"/dotplot.pdf"))) {
         file.copy(paste0(temp_dir,"/dotplot.pdf"), file, overwrite=TRUE)
       }
     })
+  }
   # known bugs:
   # when split by is selected, change cluster order not work!
 
@@ -1254,6 +1410,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                       limitsize = FALSE)
     }
 
+    plot_cache$heatmap <- p
     return(p)
   }, height = function(){
     if (input$HeatmapPlotMode) {
@@ -1265,13 +1422,15 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   # box plot: height = width default
 
 
-  output$downloadheatmap <- downloadHandler(
+  if (allow_browser_download) {
+    output$downloadheatmap <- downloadHandler(
     filename = function(){'heatmap.pdf'},
     content = function(file) {
       if (file.exists(paste0(temp_dir,"/heatmap.pdf"))) {
         file.copy(paste0(temp_dir,"/heatmap.pdf"), file, overwrite=TRUE)
       }
     })
+  }
 
   ################################ Group Averaged Heatmap
   # Track ClustersSelected changes and whether order is ready
@@ -1434,6 +1593,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
     p
     dev.off()
+    plot_cache$averagedheatmap <- p
     return(p)
   }, height = function(){
     if (input$AveragedHeatmapPlotMode) {
@@ -1443,13 +1603,15 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
   })
 
-  output$downloadaveragedheatmap <- downloadHandler(
+  if (allow_browser_download) {
+    output$downloadaveragedheatmap <- downloadHandler(
     filename = function(){'AveragedHeatmap.pdf'},
     content = function(file) {
       if (file.exists(paste0(temp_dir,"/AveragedHeatmap.pdf"))) {
         file.copy(paste0(temp_dir,"/AveragedHeatmap.pdf"), file, overwrite=TRUE)
       }
     })
+  }
 
   # AveragedHeatmap Related bugs
   # when switch from a multiple level cluster, and only select one:
@@ -1670,6 +1832,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                       scale = 5,
                       limitsize = FALSE)
     }
+    plot_cache$ridgeplot <- p
     return(p)
   }, height = function(){
     if (input$RidgeplotPlotMode) {
@@ -1680,13 +1843,15 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   })
   # box plot: height = width default
 
-  output$downloadridgeplot <- downloadHandler(
+  if (allow_browser_download) {
+    output$downloadridgeplot <- downloadHandler(
     filename = function(){'ridgeplot.pdf'},
     content = function(file) {
       if (file.exists(paste0(temp_dir,"/ridgeplot.pdf"))) {
         file.copy(paste0(temp_dir,"/ridgeplot.pdf"), file, overwrite=TRUE)
       }
     })
+  }
 
   ################################ Cell ratio Plot
   # Track resolution changes and whether order is ready
@@ -1906,6 +2071,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                       scale = 5,
                       limitsize = FALSE)
     }
+    plot_cache$cellratioplot <- p
     return(p)
   }, height = function(){
     if (input$CellratioMode) {
@@ -1916,13 +2082,15 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
   })
 
   # download
-  output$downloadcellratioplot <- downloadHandler(
+  if (allow_browser_download) {
+    output$downloadcellratioplot <- downloadHandler(
     filename = function(){'cellratioplot.pdf'},
     content = function(file) {
       if (file.exists(paste0(temp_dir,"/cellratioplot.pdf"))) {
         file.copy(paste0(temp_dir,"/cellratioplot.pdf"), file, overwrite=TRUE)
       }
     })
+  }
 
   output$cellratiodata <-  DT::renderDT(server=FALSE,{
     req(input$CellratioFillChoice)
@@ -2720,7 +2888,8 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     }
   })
 
-  output$renameclustersDownload <- downloadHandler(
+  if (allow_browser_download) {
+    output$renameclustersDownload <- downloadHandler(
     filename = function() {
       "new_annotation_mapping.csv"
     },
@@ -2731,6 +2900,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
       write.csv(df, file, row.names = FALSE)
     }
   )
+  }
 
   ############################## Search features
   # output the features dataset
@@ -2757,7 +2927,7 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
     req(data$obj)
     # Show data
     DT::datatable(data$obj@meta.data,
-                  callback = DT::JS("$('div.dwnld').append($('#download_meta_data'));"),
+                  callback = NULL,
                   extensions = 'Buttons',
                   options = list(scrollX=TRUE,
                                  # lengthMenu = c(5,10,15),
@@ -2771,7 +2941,8 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
                   ))
   })
 
-  output$download_meta_data <- downloadHandler(
+  if (allow_browser_download) {
+    output$download_meta_data <- downloadHandler(
     filename = function() {
       "cell-metadata.csv"
     },
@@ -2779,6 +2950,80 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
       write.csv(data$obj@meta.data, file)
     }
   )
+  }
+
+  observeEvent(input$savedimplot, {
+    tryCatch({
+      path <- save_plot_to_workspace(isolate(plot_cache$dimplot), "dimplot", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save dimplot: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$savefeatureplot, {
+    tryCatch({
+      path <- save_plot_to_workspace(isolate(plot_cache$featureplot), "featureplot", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save featureplot: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$savevlnplot, {
+    tryCatch({
+      path <- save_plot_to_workspace(isolate(plot_cache$vlnplot), "vlnplot", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save vlnplot: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$savedotplot, {
+    tryCatch({
+      path <- save_plot_to_workspace(isolate(plot_cache$dotplot), "dotplot", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save dotplot: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$saveheatmap, {
+    tryCatch({
+      path <- save_plot_to_workspace(isolate(plot_cache$heatmap), "heatmap", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save heatmap: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$saveaveragedheatmap, {
+    tryCatch({
+      path <- save_plot_to_workspace(isolate(plot_cache$averagedheatmap), "averagedheatmap", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save averaged heatmap: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$saveridgeplot, {
+    tryCatch({
+      path <- save_plot_to_workspace(isolate(plot_cache$ridgeplot), "ridgeplot", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save ridgeplot: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$savecellratioplot, {
+    tryCatch({
+      path <- save_plot_to_workspace(isolate(plot_cache$cellratioplot), "cellratioplot", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save cell ratio plot: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$renameclustersSave, {
+    tryCatch({
+      new_anno_mapping_list <- reactiveValuesToList(new_anno_mapping)
+      df <- new_anno_mapping_list$mapping
+      colnames(df) <- c(new_anno_mapping_list$OldClusterName, new_anno_mapping_list$NewClusterName)
+      path <- save_table_to_workspace(df, "new_annotation_mapping", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save new annotation mapping: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$save_meta_data, {
+    tryCatch({
+      path <- save_table_to_workspace(data$obj@meta.data, "cell_metadata", dataset_name = data$Name, dest_dir = req(input$workspace_folder))
+      showNotification(paste0("Saved to workspace: ", path), type = "message", duration = 8)
+    }, error = function(e) showNotification(paste0("Failed to save cell metadata: ", e$message), type = "error", duration = NULL))
+  }, ignoreInit = TRUE)
 
   ############################### Render Object structure
   output$object_structure <- renderPrint({
@@ -2806,6 +3051,8 @@ server <- function(input, output, session) {
   readonly_dataset_dir <- normalizePath("~/session_data/mounted-data-readonly", mustWork = FALSE)
   dataset_dirs_allowed <- unique(c(dataset_dir, readonly_dataset_dir))
   allow_browser_upload <- isTRUE(getOption("SeuratExplorerAllowBrowserUpload", FALSE))
+  workspace_dir <- normalizePath(getOption("SeuratExplorerWorkspaceDir", getwd()), mustWork = FALSE)
+  allow_browser_download <- isTRUE(getOption("SeuratExplorerAllowBrowserDownload", FALSE))
 
   ## Dataset tab ----
   # reactiveValues: Create an object for storing reactive values,similar to a list,
@@ -2897,6 +3144,7 @@ server <- function(input, output, session) {
     }
 
     data$Path <- path
+    data$Name <- tools::file_path_sans_ext(basename(path))
 
     seu_obj <- readSeurat(path = path, verbose = getOption('SeuratExplorerVerbose'))
     validate(need(inherits(seu_obj, "Seurat"),
@@ -2974,6 +3222,8 @@ server <- function(input, output, session) {
                   output = output,
                   session = session,
                   data = data,
-                  verbose = getOption('SeuratExplorerVerbose'))
+                  verbose = getOption('SeuratExplorerVerbose'),
+                  workspace_dir = workspace_dir,
+                  allow_browser_download = allow_browser_download)
 
 }
