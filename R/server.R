@@ -2802,6 +2802,11 @@ explorer_server <- function(input, output, session, data, verbose=FALSE){
 #' @return the server functions of shiny app
 #'
 server <- function(input, output, session) {
+  dataset_dir <- normalizePath(getOption("SeuratExplorerDatasetDir", "data"), mustWork = FALSE)
+  readonly_dataset_dir <- normalizePath("~/session_data/mounted-data-readonly", mustWork = FALSE)
+  dataset_dirs_allowed <- unique(c(dataset_dir, readonly_dataset_dir))
+  allow_browser_upload <- isTRUE(getOption("SeuratExplorerAllowBrowserUpload", FALSE))
+
   ## Dataset tab ----
   # reactiveValues: Create an object for storing reactive values,similar to a list,
   # but with special capabilities for reactive programming.
@@ -2821,18 +2826,83 @@ server <- function(input, output, session) {
                         extra_qc_options = NULL,
                         version = 0)
 
-  # reductions_options: xy axis coordinate
-  # cluster_options/split_options/extra_qc_options all are column name from seurat object meta.data,
-  # which will be used for later plot
-  # load data after data selection
-  observeEvent(input$dataset_file, {
-    ext = tools::file_ext(input$dataset_file$datapath) # file_ext: returns the file (name) extensions
-    # validate + need: check file name post-fix, in not rds or qs2, will throw an error
-    validate(need(expr = ext %in% c("rds","qs2","Rds"),
-                  message = "Please upload a .rds or a .qs2 file"))
-    data$Path <- input$dataset_file$datapath
+  dataset_choices <- reactiveVal(setNames(character(0), character(0)))
 
-    data$obj <- prepare_seurat_object(obj = readSeurat(path = input$dataset_file$datapath, verbose = getOption('SeuratExplorerVerbose')),
+  refresh_dataset_choices <- function() {
+    dataset_choices(list_dataset_files(dataset_dir = dataset_dirs_allowed))
+  }
+
+  refresh_dataset_choices()
+
+  observeEvent(input$dataset_refresh, {
+    refresh_dataset_choices()
+    if (length(dataset_choices()) == 0) {
+      showNotification(
+        paste0("No .rds or .qs2 files found under: ", paste(dataset_dirs_allowed, collapse = " | ")),
+        type = "message"
+      )
+    }
+  }, ignoreInit = TRUE)
+
+  output$dataset_dir_display <- renderText({
+    paste(dataset_dirs_allowed, collapse = " | ")
+  })
+
+  output$allow_browser_upload <- reactive({
+    allow_browser_upload
+  })
+  outputOptions(output, 'allow_browser_upload', suspendWhenHidden = FALSE)
+
+  output$dataset_file_server_ui <- renderUI({
+    choices <- dataset_choices()
+
+    if (length(choices) == 0) {
+      return(tags$div(
+        class = "alert alert-info",
+        paste0("No dataset files found in: ", paste(dataset_dirs_allowed, collapse = " | "),
+               ". Place .rds or .qs2 Seurat object files in one of these directories and click Refresh Dataset List.")
+      ))
+    }
+
+    selectInput(
+      "dataset_file_server",
+      "Choose a server-side .rds or .qs2 file of Seurat Object:",
+      choices = choices,
+      selected = unname(choices[[1]])
+    )
+  })
+
+  load_dataset <- function(path, source_label = "server") {
+    ext <- tolower(tools::file_ext(path))
+
+    validate(need(expr = ext %in% c("rds", "qs2"),
+                  message = "Please select a .rds or a .qs2 file"))
+
+    if (identical(source_label, "server")) {
+      normalized_path <- normalizePath(path, mustWork = TRUE)
+
+      existing_allowed_dirs <- dataset_dirs_allowed[dir.exists(dataset_dirs_allowed)]
+      normalized_allowed_dirs <- normalizePath(existing_allowed_dirs, mustWork = TRUE)
+      is_in_allowed_dir <- any(vapply(normalized_allowed_dirs, function(one_allowed_dir) {
+        dir_prefix <- paste0(one_allowed_dir, .Platform$file.sep)
+        identical(normalized_path, one_allowed_dir) || startsWith(normalized_path, dir_prefix)
+      }, logical(1)))
+
+      validate(need(
+        expr = is_in_allowed_dir,
+        message = "Invalid dataset path: file must be inside an allowed dataset directory"
+      ))
+
+      path <- normalized_path
+    }
+
+    data$Path <- path
+
+    seu_obj <- readSeurat(path = path, verbose = getOption('SeuratExplorerVerbose'))
+    validate(need(inherits(seu_obj, "Seurat"),
+                  message = "Loaded object is not a Seurat object"))
+
+    data$obj <- prepare_seurat_object(obj = seu_obj,
                                       verbose = getOption('SeuratExplorerVerbose'))
 
     data$reduction_options <- prepare_reduction_options(obj = data$obj,
@@ -2862,13 +2932,35 @@ server <- function(input, output, session) {
     data$extra_qc_options <- prepare_qc_options(df = data$obj@meta.data,
                                                 types = c("double","integer","numeric"),
                                                 verbose = getOption('SeuratExplorerVerbose'))
-  })
 
-  # after data loaded,set loaded to TRUE
-  observe({
-    req(data$obj)
-    data$loaded = !is.null(data$obj)
-  })
+    data$loaded <- !is.null(data$obj)
+  }
+
+  observeEvent(input$dataset_file_server, {
+    req(input$dataset_file_server)
+    tryCatch(
+      {
+        load_dataset(path = input$dataset_file_server, source_label = "server")
+      },
+      error = function(e) {
+        data$loaded <- FALSE
+        showNotification(paste0("Failed to load selected server dataset: ", e$message), type = "error", duration = NULL)
+      }
+    )
+  }, ignoreInit = FALSE)
+
+  observeEvent(input$dataset_file, {
+    req(allow_browser_upload, input$dataset_file$datapath)
+    tryCatch(
+      {
+        load_dataset(path = input$dataset_file$datapath, source_label = "upload")
+      },
+      error = function(e) {
+        data$loaded <- FALSE
+        showNotification(paste0("Failed to load uploaded dataset: ", e$message), type = "error", duration = NULL)
+      }
+    )
+  }, ignoreInit = TRUE)
 
   # Conditional panel control based on loaded obj, after loaded, show other UIs
   output$file_loaded = reactive({
